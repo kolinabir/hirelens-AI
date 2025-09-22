@@ -44,7 +44,7 @@ export const ANTI_DETECTION_CONFIG = {
   // Timezone pools
   timezones: [
     "America/New_York",
-    "America/Los_Angeles", 
+    "America/Los_Angeles",
     "America/Chicago",
     "Europe/London",
     "Europe/Berlin",
@@ -80,8 +80,12 @@ export class EnhancedBrowserManager {
     const userAgent = this.getRandomElement(ANTI_DETECTION_CONFIG.userAgents);
     const viewport = this.getRandomElement(ANTI_DETECTION_CONFIG.viewports);
     const screen = this.getRandomElement(ANTI_DETECTION_CONFIG.screens);
-    const hardwareConcurrency = this.getRandomElement(ANTI_DETECTION_CONFIG.hardwareConcurrency);
-    const deviceMemory = this.getRandomElement(ANTI_DETECTION_CONFIG.deviceMemory);
+    const hardwareConcurrency = this.getRandomElement(
+      ANTI_DETECTION_CONFIG.hardwareConcurrency
+    );
+    const deviceMemory = this.getRandomElement(
+      ANTI_DETECTION_CONFIG.deviceMemory
+    );
     const timezone = this.getRandomElement(ANTI_DETECTION_CONFIG.timezones);
     const languages = this.getRandomElement(ANTI_DETECTION_CONFIG.languages);
 
@@ -207,12 +211,14 @@ export class EnhancedBrowserManager {
       });
 
       scraperLogger.info("✅ Enhanced stealth browser launched successfully");
-      scraperLogger.info(`🔒 Using fingerprint: ${JSON.stringify({
-        userAgent: this.currentFingerprint.userAgent.substring(0, 50) + "...",
-        viewport: this.currentFingerprint.viewport,
-        timezone: this.currentFingerprint.timezone,
-        hardwareConcurrency: this.currentFingerprint.hardwareConcurrency,
-      })}`);
+      scraperLogger.info(
+        `🔒 Using fingerprint: ${JSON.stringify({
+          userAgent: this.currentFingerprint.userAgent.substring(0, 50) + "...",
+          viewport: this.currentFingerprint.viewport,
+          timezone: this.currentFingerprint.timezone,
+          hardwareConcurrency: this.currentFingerprint.hardwareConcurrency,
+        })}`
+      );
 
       return this.browser;
     } catch (error) {
@@ -283,7 +289,7 @@ export class EnhancedBrowserManager {
 
         // Block unnecessary resources with some randomness
         const shouldBlock = this.shouldBlockResource(resourceType, url);
-        
+
         if (shouldBlock) {
           request.abort();
         } else {
@@ -309,11 +315,13 @@ export class EnhancedBrowserManager {
 
         // WebGL spoofing
         const getParameter = WebGLRenderingContext.prototype.getParameter;
-        WebGLRenderingContext.prototype.getParameter = function(parameter) {
-          if (parameter === 37445) { // UNMASKED_VENDOR_WEBGL
+        WebGLRenderingContext.prototype.getParameter = function (parameter) {
+          if (parameter === 37445) {
+            // UNMASKED_VENDOR_WEBGL
             return fp.webglVendor;
           }
-          if (parameter === 37446) { // UNMASKED_RENDERER_WEBGL
+          if (parameter === 37446) {
+            // UNMASKED_RENDERER_WEBGL
             return fp.webglRenderer;
           }
           return getParameter.call(this, parameter);
@@ -321,7 +329,7 @@ export class EnhancedBrowserManager {
 
         // Canvas fingerprint spoofing
         const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
-        HTMLCanvasElement.prototype.toDataURL = function(...args) {
+        HTMLCanvasElement.prototype.toDataURL = function (...args) {
           const result = originalToDataURL.apply(this, args);
           // Add slight noise to canvas fingerprint
           return result + fp.canvasFingerprint;
@@ -329,10 +337,10 @@ export class EnhancedBrowserManager {
 
         // Audio context fingerprint spoofing
         const originalCreateAnalyser = AudioContext.prototype.createAnalyser;
-        AudioContext.prototype.createAnalyser = function() {
+        AudioContext.prototype.createAnalyser = function () {
           const analyser = originalCreateAnalyser.call(this);
           const originalGetFloatFrequencyData = analyser.getFloatFrequencyData;
-          analyser.getFloatFrequencyData = function(array) {
+          analyser.getFloatFrequencyData = function (array) {
             originalGetFloatFrequencyData.call(this, array);
             // Add slight noise to audio fingerprint
             for (let i = 0; i < array.length; i++) {
@@ -375,7 +383,7 @@ export class EnhancedBrowserManager {
               filename: "internal-pdf-viewer",
             },
             {
-              name: "Chrome PDF Viewer", 
+              name: "Chrome PDF Viewer",
               description: "",
               filename: "mhjfbmdgcfjbbpaeojofohoefgiehjai",
             },
@@ -389,7 +397,7 @@ export class EnhancedBrowserManager {
 
         // Override permissions with proper typing
         const originalQuery = navigator.permissions.query;
-        navigator.permissions.query = function(parameters) {
+        navigator.permissions.query = function (parameters) {
           return originalQuery.call(this, parameters).then((result) => {
             if (parameters.name === "notifications") {
               // Create a new object with modified state
@@ -437,7 +445,7 @@ export class EnhancedBrowserManager {
     // Always block tracking and ads
     const alwaysBlock = [
       "google-analytics",
-      "googletagmanager", 
+      "googletagmanager",
       "facebook.com/tr",
       "doubleclick",
       "googlesyndication",
@@ -447,12 +455,13 @@ export class EnhancedBrowserManager {
     ];
 
     // Check if URL should always be blocked
-    if (alwaysBlock.some(blocked => url.includes(blocked))) {
+    if (alwaysBlock.some((blocked) => url.includes(blocked))) {
       return true;
     }
 
     // Probabilistic blocking for other resources
-    const probability = blockProbability[resourceType as keyof typeof blockProbability];
+    const probability =
+      blockProbability[resourceType as keyof typeof blockProbability];
     if (probability) {
       return Math.random() < probability;
     }
@@ -461,18 +470,22 @@ export class EnhancedBrowserManager {
   }
 
   // Simulate human-like mouse movements
-  public static async humanMouseMove(page: Page, x: number, y: number): Promise<void> {
+  public static async humanMouseMove(
+    page: Page,
+    x: number,
+    y: number
+  ): Promise<void> {
     const steps = Math.floor(Math.random() * 10) + 5; // 5-15 steps
-    
+
     // Get current mouse position (start from 0,0 if unknown)
     const startX = 0;
     const startY = 0;
-    
+
     for (let i = 0; i <= steps; i++) {
       const progress = i / steps;
       const currentX = startX + (x - startX) * progress;
       const currentY = startY + (y - startY) * progress;
-      
+
       await page.mouse.move(currentX, currentY);
       await this.randomDelay(5, 15); // Small delay between movements
     }
@@ -484,16 +497,20 @@ export class EnhancedBrowserManager {
     const lambda = 1 / ((min + max) / 2);
     const randomValue = -Math.log(Math.random()) / lambda;
     const delay = Math.min(Math.max(randomValue, min), max);
-    
+
     scraperLogger.debug(`⏳ Human-like delay: ${Math.round(delay)}ms`);
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
   // Human-like typing simulation
-  public static async humanType(page: Page, selector: string, text: string): Promise<void> {
+  public static async humanType(
+    page: Page,
+    selector: string,
+    text: string
+  ): Promise<void> {
     await page.click(selector);
     await this.randomDelay(100, 300);
-    
+
     for (const char of text) {
       await page.keyboard.type(char);
       await this.randomDelay(50, 150); // Realistic typing speed
@@ -501,26 +518,30 @@ export class EnhancedBrowserManager {
   }
 
   // Enhanced natural scrolling with acceleration/deceleration
-  public static async naturalScroll(page: Page, scrollDistance = 500): Promise<void> {
+  public static async naturalScroll(
+    page: Page,
+    scrollDistance = 500
+  ): Promise<void> {
     const steps = Math.floor(Math.random() * 20) + 10; // 10-30 steps
     const stepSize = scrollDistance / steps;
-    
+
     for (let i = 0; i < steps; i++) {
       // Simulate acceleration/deceleration
       const progress = i / steps;
-      const easing = progress < 0.5 
-        ? 2 * progress * progress 
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-      
+      const easing =
+        progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
       const currentStepSize = stepSize * (0.5 + easing);
-      
+
       await page.evaluate((distance) => {
         window.scrollBy(0, distance);
       }, currentStepSize);
-      
+
       await this.randomDelay(50, 150);
     }
-    
+
     // Random pause after scrolling
     await this.randomDelay(500, 1500);
   }
@@ -537,7 +558,10 @@ export class EnhancedBrowserManager {
       // Random small scrolls
       async () => {
         const scrollAmount = (Math.random() - 0.5) * 200;
-        await page.evaluate((amount) => window.scrollBy(0, amount), scrollAmount);
+        await page.evaluate(
+          (amount) => window.scrollBy(0, amount),
+          scrollAmount
+        );
       },
       // Random pauses (like reading)
       async () => {
@@ -548,10 +572,15 @@ export class EnhancedBrowserManager {
         try {
           const elements = await page.$$("div, span, p");
           if (elements.length > 0) {
-            const randomElement = elements[Math.floor(Math.random() * elements.length)];
+            const randomElement =
+              elements[Math.floor(Math.random() * elements.length)];
             const box = await randomElement.boundingBox();
             if (box) {
-              await this.humanMouseMove(page, box.x + box.width/2, box.y + box.height/2);
+              await this.humanMouseMove(
+                page,
+                box.x + box.width / 2,
+                box.y + box.height / 2
+              );
             }
           }
         } catch {
@@ -561,7 +590,8 @@ export class EnhancedBrowserManager {
     ];
 
     // Randomly execute one of the behaviors
-    const randomBehavior = behaviors[Math.floor(Math.random() * behaviors.length)];
+    const randomBehavior =
+      behaviors[Math.floor(Math.random() * behaviors.length)];
     await randomBehavior();
   }
 

@@ -36,11 +36,13 @@ export class SessionManager {
     try {
       // Create sessions directory if it doesn't exist
       await fs.mkdir(this.sessionsDir, { recursive: true });
-      
+
       // Load existing sessions
       await this.loadExistingSessions();
-      
-      scraperLogger.info(`✅ Session manager initialized with ${this.activeSessions.size} sessions`);
+
+      scraperLogger.info(
+        `✅ Session manager initialized with ${this.activeSessions.size} sessions`
+      );
     } catch (error) {
       scraperLogger.error("❌ Failed to initialize session manager:", error);
       throw error;
@@ -50,20 +52,20 @@ export class SessionManager {
   private async loadExistingSessions(): Promise<void> {
     try {
       const sessionFiles = await fs.readdir(this.sessionsDir);
-      
+
       for (const file of sessionFiles) {
         if (file.endsWith(".json")) {
           const sessionData = await fs.readFile(
             path.join(this.sessionsDir, file),
             "utf-8"
           );
-          
+
           const session: BrowserSession = JSON.parse(sessionData);
-          
+
           // Convert date strings back to Date objects
           session.createdAt = new Date(session.createdAt);
           session.lastUsed = new Date(session.lastUsed);
-          
+
           this.activeSessions.set(session.id, session);
         }
       }
@@ -72,10 +74,12 @@ export class SessionManager {
     }
   }
 
-  public async createSession(fingerprint: Record<string, unknown>): Promise<BrowserSession> {
+  public async createSession(
+    fingerprint: Record<string, unknown>
+  ): Promise<BrowserSession> {
     const sessionId = this.generateSessionId();
     const profilePath = path.join(this.sessionsDir, `profile_${sessionId}`);
-    
+
     const session: BrowserSession = {
       id: sessionId,
       profilePath,
@@ -91,12 +95,12 @@ export class SessionManager {
 
     // Create profile directory
     await fs.mkdir(profilePath, { recursive: true });
-    
+
     // Save session metadata
     await this.saveSession(session);
-    
+
     this.activeSessions.set(sessionId, session);
-    
+
     scraperLogger.info(`✅ Created new browser session: ${sessionId}`);
     return session;
   }
@@ -104,7 +108,7 @@ export class SessionManager {
   public async getAvailableSession(): Promise<BrowserSession | null> {
     // Find an available session that's not blocked and hasn't been overused
     const availableSessions = Array.from(this.activeSessions.values())
-      .filter(session => !session.isBlocked && session.useCount < 50)
+      .filter((session) => !session.isBlocked && session.useCount < 50)
       .sort((a, b) => a.lastUsed.getTime() - b.lastUsed.getTime());
 
     if (availableSessions.length > 0) {
@@ -112,8 +116,10 @@ export class SessionManager {
       session.lastUsed = new Date();
       session.useCount++;
       await this.saveSession(session);
-      
-      scraperLogger.info(`♻️ Reusing browser session: ${session.id} (use count: ${session.useCount})`);
+
+      scraperLogger.info(
+        `♻️ Reusing browser session: ${session.id} (use count: ${session.useCount})`
+      );
       return session;
     }
 
@@ -125,7 +131,7 @@ export class SessionManager {
     if (session) {
       session.isBlocked = true;
       await this.saveSession(session);
-      
+
       scraperLogger.warn(`🚫 Marked session as blocked: ${sessionId}`);
     }
   }
@@ -169,7 +175,9 @@ export class SessionManager {
     }
 
     if (sessionsToRemove.length > 0) {
-      scraperLogger.info(`🧹 Cleaned up ${sessionsToRemove.length} old sessions`);
+      scraperLogger.info(
+        `🧹 Cleaned up ${sessionsToRemove.length} old sessions`
+      );
     }
   }
 
@@ -179,11 +187,11 @@ export class SessionManager {
       if (session) {
         // Remove profile directory
         await fs.rm(session.profilePath, { recursive: true, force: true });
-        
+
         // Remove session file
         const sessionFile = path.join(this.sessionsDir, `${sessionId}.json`);
         await fs.unlink(sessionFile).catch(() => {}); // Ignore if file doesn't exist
-        
+
         this.activeSessions.delete(sessionId);
       }
     } catch (error) {
@@ -200,8 +208,9 @@ export class SessionManager {
   }
 
   public getActiveSessionCount(): number {
-    return Array.from(this.activeSessions.values())
-      .filter(session => !session.isBlocked).length;
+    return Array.from(this.activeSessions.values()).filter(
+      (session) => !session.isBlocked
+    ).length;
   }
 
   public async getSessionStats(): Promise<{
@@ -211,10 +220,11 @@ export class SessionManager {
     averageUseCount: number;
   }> {
     const sessions = Array.from(this.activeSessions.values());
-    const blocked = sessions.filter(s => s.isBlocked).length;
-    const averageUseCount = sessions.length > 0 
-      ? sessions.reduce((sum, s) => sum + s.useCount, 0) / sessions.length 
-      : 0;
+    const blocked = sessions.filter((s) => s.isBlocked).length;
+    const averageUseCount =
+      sessions.length > 0
+        ? sessions.reduce((sum, s) => sum + s.useCount, 0) / sessions.length
+        : 0;
 
     return {
       total: sessions.length,
