@@ -1,7 +1,13 @@
-import { MongoClient, Db, Collection, Document, Filter } from 'mongodb';
-import { env } from '../config/env';
-import { DB_CONFIG } from '../config/constants';
-import type { JobPost, FacebookGroup, ScrapingSession, UserCredentials, DashboardStats } from '../types';
+import { MongoClient, Db, Collection, Document, Filter } from "mongodb";
+import { env } from "../config/env";
+import { DB_CONFIG } from "../config/constants";
+import type {
+  JobPost,
+  FacebookGroup,
+  ScrapingSession,
+  UserCredentials,
+  DashboardStats,
+} from "../types";
 
 class DatabaseConnection {
   private static instance: DatabaseConnection;
@@ -23,17 +29,17 @@ class DatabaseConnection {
         return; // Already connected
       }
 
-      console.log('🔄 Connecting to MongoDB...');
+      console.log("🔄 Connecting to MongoDB...");
       this.client = new MongoClient(env.mongodbUri);
       await this.client.connect();
       this.db = this.client.db(env.mongodbDbName);
-      
+
       // Create indexes
       await this.createIndexes();
-      
-      console.log('✅ Connected to MongoDB successfully');
+
+      console.log("✅ Connected to MongoDB successfully");
     } catch (error) {
-      console.error('❌ Failed to connect to MongoDB:', error);
+      console.error("❌ Failed to connect to MongoDB:", error);
       throw error;
     }
   }
@@ -43,18 +49,20 @@ class DatabaseConnection {
       await this.client.close();
       this.client = null;
       this.db = null;
-      console.log('✅ Disconnected from MongoDB');
+      console.log("✅ Disconnected from MongoDB");
     }
   }
 
   public getDb(): Db {
     if (!this.db) {
-      throw new Error('Database not connected. Call connect() first.');
+      throw new Error("Database not connected. Call connect() first.");
     }
     return this.db;
   }
 
-  public getCollection<T extends Document>(collectionName: string): Collection<T> {
+  public getCollection<T extends Document>(
+    collectionName: string
+  ): Collection<T> {
     return this.getDb().collection<T>(collectionName);
   }
 
@@ -72,7 +80,9 @@ class DatabaseConnection {
   }
 
   public getCredentialsCollection(): Collection<UserCredentials> {
-    return this.getCollection<UserCredentials>(DB_CONFIG.collections.credentials);
+    return this.getCollection<UserCredentials>(
+      DB_CONFIG.collections.credentials
+    );
   }
 
   private async createIndexes(): Promise<void> {
@@ -87,10 +97,14 @@ class DatabaseConnection {
         jobsCollection.createIndex({ scrapedAt: -1 }),
         jobsCollection.createIndex({ isProcessed: 1 }),
         jobsCollection.createIndex({ isDuplicate: 1 }),
-        jobsCollection.createIndex({ 'jobDetails.type': 1 }),
-        jobsCollection.createIndex({ 'jobDetails.location': 1 }),
+        jobsCollection.createIndex({ "jobDetails.type": 1 }),
+        jobsCollection.createIndex({ "jobDetails.location": 1 }),
         jobsCollection.createIndex({ tags: 1 }),
-        jobsCollection.createIndex({ content: 'text', 'jobDetails.title': 'text', 'jobDetails.description': 'text' }),
+        jobsCollection.createIndex({
+          content: "text",
+          "jobDetails.title": "text",
+          "jobDetails.description": "text",
+        }),
       ]);
 
       // Groups indexes
@@ -112,16 +126,18 @@ class DatabaseConnection {
       ]);
 
       // Credentials indexes
-      const credentialsCollection = db.collection(DB_CONFIG.collections.credentials);
+      const credentialsCollection = db.collection(
+        DB_CONFIG.collections.credentials
+      );
       await Promise.all([
         credentialsCollection.createIndex({ email: 1 }, { unique: true }),
         credentialsCollection.createIndex({ isActive: 1 }),
         credentialsCollection.createIndex({ isBlocked: 1 }),
       ]);
 
-      console.log('✅ Database indexes created successfully');
+      console.log("✅ Database indexes created successfully");
     } catch (error) {
-      console.error('❌ Failed to create indexes:', error);
+      console.error("❌ Failed to create indexes:", error);
       throw error;
     }
   }
@@ -135,7 +151,7 @@ class DatabaseConnection {
       await this.db.admin().ping();
       return true;
     } catch (error) {
-      console.error('Database health check failed:', error);
+      console.error("Database health check failed:", error);
       return false;
     }
   }
@@ -147,13 +163,17 @@ export const dbConnection = DatabaseConnection.getInstance();
 // Utility functions for common database operations
 export class DatabaseUtils {
   // Job Posts operations
-  static async insertJobPost(jobPost: Omit<JobPost, '_id'>): Promise<string> {
+  static async insertJobPost(jobPost: Omit<JobPost, "_id">): Promise<string> {
     const collection = dbConnection.getJobsCollection();
     const result = await collection.insertOne(jobPost);
     return result.insertedId.toString();
   }
 
-  static async findJobPosts(filter: Filter<JobPost> = {}, limit = 50, skip = 0): Promise<JobPost[]> {
+  static async findJobPosts(
+    filter: Filter<JobPost> = {},
+    limit = 50,
+    skip = 0
+  ): Promise<JobPost[]> {
     const collection = dbConnection.getJobsCollection();
     return await collection
       .find(filter)
@@ -168,7 +188,10 @@ export class DatabaseUtils {
     return await collection.countDocuments(filter);
   }
 
-  static async updateJobPost(postId: string, update: Partial<JobPost>): Promise<boolean> {
+  static async updateJobPost(
+    postId: string,
+    update: Partial<JobPost>
+  ): Promise<boolean> {
     const collection = dbConnection.getJobsCollection();
     const result = await collection.updateOne({ postId }, { $set: update });
     return result.modifiedCount > 0;
@@ -181,18 +204,23 @@ export class DatabaseUtils {
   }
 
   // Groups operations
-  static async insertGroup(group: Omit<FacebookGroup, '_id'>): Promise<string> {
+  static async insertGroup(group: Omit<FacebookGroup, "_id">): Promise<string> {
     const collection = dbConnection.getGroupsCollection();
     const result = await collection.insertOne(group);
     return result.insertedId.toString();
   }
 
-  static async findGroups(filter: Filter<FacebookGroup> = {}): Promise<FacebookGroup[]> {
+  static async findGroups(
+    filter: Filter<FacebookGroup> = {}
+  ): Promise<FacebookGroup[]> {
     const collection = dbConnection.getGroupsCollection();
     return await collection.find(filter).toArray();
   }
 
-  static async updateGroup(groupId: string, update: Partial<FacebookGroup>): Promise<boolean> {
+  static async updateGroup(
+    groupId: string,
+    update: Partial<FacebookGroup>
+  ): Promise<boolean> {
     const collection = dbConnection.getGroupsCollection();
     const result = await collection.updateOne({ groupId }, { $set: update });
     return result.modifiedCount > 0;
@@ -205,7 +233,9 @@ export class DatabaseUtils {
   }
 
   // Sessions operations
-  static async insertSession(session: Omit<ScrapingSession, '_id'>): Promise<string> {
+  static async insertSession(
+    session: Omit<ScrapingSession, "_id">
+  ): Promise<string> {
     const collection = dbConnection.getSessionsCollection();
     const result = await collection.insertOne(session);
     return result.insertedId.toString();
@@ -213,10 +243,13 @@ export class DatabaseUtils {
 
   static async findActiveSessions(): Promise<ScrapingSession[]> {
     const collection = dbConnection.getSessionsCollection();
-    return await collection.find({ status: 'running' }).toArray();
+    return await collection.find({ status: "running" }).toArray();
   }
 
-  static async updateSession(sessionId: string, update: Partial<ScrapingSession>): Promise<boolean> {
+  static async updateSession(
+    sessionId: string,
+    update: Partial<ScrapingSession>
+  ): Promise<boolean> {
     const collection = dbConnection.getSessionsCollection();
     const result = await collection.updateOne({ sessionId }, { $set: update });
     return result.modifiedCount > 0;
@@ -227,12 +260,15 @@ export class DatabaseUtils {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [totalJobs, todayJobs, activeGroups, activeSessions] = await Promise.all([
-      DatabaseUtils.countJobPosts(),
-      DatabaseUtils.countJobPosts({ scrapedAt: { $gte: today } }),
-      DatabaseUtils.countJobPosts({ isActive: true }),
-      dbConnection.getSessionsCollection().countDocuments({ status: 'running' }),
-    ]);
+    const [totalJobs, todayJobs, activeGroups, activeSessions] =
+      await Promise.all([
+        DatabaseUtils.countJobPosts(),
+        DatabaseUtils.countJobPosts({ scrapedAt: { $gte: today } }),
+        DatabaseUtils.countJobPosts({ isActive: true }),
+        dbConnection
+          .getSessionsCollection()
+          .countDocuments({ status: "running" }),
+      ]);
 
     return {
       totalJobs,

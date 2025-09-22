@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import type { DashboardStats } from '@/types';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import type { DashboardStats } from "@/types";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -16,17 +16,17 @@ export default function Dashboard() {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/dashboard/stats');
+      const response = await fetch("/api/dashboard/stats");
       const result = await response.json();
-      
+
       if (result.success) {
         setStats(result.data);
       } else {
-        setError(result.error || 'Failed to fetch stats');
+        setError(result.error || "Failed to fetch stats");
       }
     } catch (err) {
-      setError('Failed to fetch dashboard stats');
-      console.error('Dashboard stats error:', err);
+      setError("Failed to fetch dashboard stats");
+      console.error("Dashboard stats error:", err);
     } finally {
       setLoading(false);
     }
@@ -135,7 +135,9 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Quick Actions
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link
               href="/dashboard/jobs"
@@ -145,11 +147,13 @@ export default function Dashboard() {
                 <span className="text-2xl mr-3">📋</span>
                 <div>
                   <h3 className="font-medium text-gray-900">View All Jobs</h3>
-                  <p className="text-sm text-gray-500">Browse scraped job posts</p>
+                  <p className="text-sm text-gray-500">
+                    Browse scraped job posts
+                  </p>
                 </div>
               </div>
             </Link>
-            
+
             <Link
               href="/dashboard/groups"
               className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
@@ -158,11 +162,13 @@ export default function Dashboard() {
                 <span className="text-2xl mr-3">👥</span>
                 <div>
                   <h3 className="font-medium text-gray-900">Manage Groups</h3>
-                  <p className="text-sm text-gray-500">Add or remove Facebook groups</p>
+                  <p className="text-sm text-gray-500">
+                    Add or remove Facebook groups
+                  </p>
                 </div>
               </div>
             </Link>
-            
+
             <Link
               href="/dashboard/scraping"
               className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors"
@@ -171,7 +177,9 @@ export default function Dashboard() {
                 <span className="text-2xl mr-3">🔄</span>
                 <div>
                   <h3 className="font-medium text-gray-900">Start Scraping</h3>
-                  <p className="text-sm text-gray-500">Begin a new scraping session</p>
+                  <p className="text-sm text-gray-500">
+                    Begin a new scraping session
+                  </p>
                 </div>
               </div>
             </Link>
@@ -181,14 +189,18 @@ export default function Dashboard() {
         {/* Recent Activity */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">System Status</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              System Status
+            </h2>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Last Update</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {stats?.lastUpdate ? new Date(stats.lastUpdate).toLocaleString() : 'Never'}
+                  {stats?.lastUpdate
+                    ? new Date(stats.lastUpdate).toLocaleString()
+                    : "Never"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -199,12 +211,16 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Scraping Status</span>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  stats?.activeSessions && stats.activeSessions > 0
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {stats?.activeSessions && stats.activeSessions > 0 ? 'Running' : 'Idle'}
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    stats?.activeSessions && stats.activeSessions > 0
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {stats?.activeSessions && stats.activeSessions > 0
+                    ? "Running"
+                    : "Idle"}
                 </span>
               </div>
             </div>
@@ -219,15 +235,15 @@ interface StatsCardProps {
   title: string;
   value: number;
   icon: string;
-  color: 'blue' | 'green' | 'purple' | 'orange';
+  color: "blue" | "green" | "purple" | "orange";
 }
 
 function StatsCard({ title, value, icon, color }: StatsCardProps) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600',
-    orange: 'bg-orange-50 text-orange-600',
+    blue: "bg-blue-50 text-blue-600",
+    green: "bg-green-50 text-green-600",
+    purple: "bg-purple-50 text-purple-600",
+    orange: "bg-orange-50 text-orange-600",
   };
 
   return (
@@ -238,7 +254,9 @@ function StatsCard({ title, value, icon, color }: StatsCardProps) {
         </div>
         <div className="ml-4">
           <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-          <p className="text-2xl font-bold text-gray-900">{value.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {value.toLocaleString()}
+          </p>
         </div>
       </div>
     </div>

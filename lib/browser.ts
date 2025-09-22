@@ -1,7 +1,7 @@
-import puppeteer, { Browser, Page, LaunchOptions } from 'puppeteer';
-import { env } from '../config/env';
-import { BROWSER_CONFIG } from '../config/constants';
-import { scraperLogger } from './logger';
+import puppeteer, { Browser, Page, LaunchOptions } from "puppeteer";
+import { env } from "../config/env";
+import { BROWSER_CONFIG } from "../config/constants";
+import { scraperLogger } from "./logger";
 
 export class BrowserManager {
   private static instance: BrowserManager;
@@ -23,8 +23,8 @@ export class BrowserManager {
     }
 
     try {
-      scraperLogger.info('🚀 Launching browser...');
-      
+      scraperLogger.info("🚀 Launching browser...");
+
       const launchOptions: LaunchOptions = {
         headless: env.puppeteerHeadless,
         args: [...BROWSER_CONFIG.args],
@@ -34,23 +34,25 @@ export class BrowserManager {
 
       // Add proxy configuration if provided
       if (env.proxyHost && env.proxyPort) {
-        launchOptions.args?.push(`--proxy-server=${env.proxyHost}:${env.proxyPort}`);
+        launchOptions.args?.push(
+          `--proxy-server=${env.proxyHost}:${env.proxyPort}`
+        );
         scraperLogger.info(`🔗 Using proxy: ${env.proxyHost}:${env.proxyPort}`);
       }
 
       this.browser = await puppeteer.launch(launchOptions);
-      
+
       // Handle browser disconnect
-      this.browser.on('disconnected', () => {
-        scraperLogger.warn('⚠️ Browser disconnected');
+      this.browser.on("disconnected", () => {
+        scraperLogger.warn("⚠️ Browser disconnected");
         this.browser = null;
         this.activePagesCount = 0;
       });
 
-      scraperLogger.info('✅ Browser launched successfully');
+      scraperLogger.info("✅ Browser launched successfully");
       return this.browser;
     } catch (error) {
-      scraperLogger.error('❌ Failed to launch browser:', error);
+      scraperLogger.error("❌ Failed to launch browser:", error);
       throw error;
     }
   }
@@ -58,17 +60,21 @@ export class BrowserManager {
   public async createPage(): Promise<Page> {
     const browser = await this.launchBrowser();
     const page = await browser.newPage();
-    
+
     this.activePagesCount++;
-    scraperLogger.info(`📄 New page created. Active pages: ${this.activePagesCount}`);
+    scraperLogger.info(
+      `📄 New page created. Active pages: ${this.activePagesCount}`
+    );
 
     // Configure page settings
     await this.configurePage(page);
 
     // Handle page close
-    page.on('close', () => {
+    page.on("close", () => {
       this.activePagesCount--;
-      scraperLogger.info(`📄 Page closed. Active pages: ${this.activePagesCount}`);
+      scraperLogger.info(
+        `📄 Page closed. Active pages: ${this.activePagesCount}`
+      );
     });
 
     return page;
@@ -84,29 +90,30 @@ export class BrowserManager {
 
       // Set extra HTTP headers
       await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Upgrade-Insecure-Requests': '1',
-        'Cache-Control': 'max-age=0',
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "Upgrade-Insecure-Requests": "1",
+        "Cache-Control": "max-age=0",
       });
 
       // Block unnecessary resources to speed up loading
       await page.setRequestInterception(true);
-      page.on('request', (request) => {
+      page.on("request", (request) => {
         const resourceType = request.resourceType();
         const url = request.url();
 
         // Block ads, analytics, and other unnecessary resources
         if (
-          resourceType === 'image' && !url.includes('profile') ||
-          resourceType === 'stylesheet' ||
-          resourceType === 'font' ||
-          url.includes('google-analytics') ||
-          url.includes('googletagmanager') ||
-          url.includes('facebook.com/tr') ||
-          url.includes('doubleclick') ||
-          url.includes('ads')
+          (resourceType === "image" && !url.includes("profile")) ||
+          resourceType === "stylesheet" ||
+          resourceType === "font" ||
+          url.includes("google-analytics") ||
+          url.includes("googletagmanager") ||
+          url.includes("facebook.com/tr") ||
+          url.includes("doubleclick") ||
+          url.includes("ads")
         ) {
           request.abort();
         } else {
@@ -129,9 +136,9 @@ export class BrowserManager {
       page.setDefaultTimeout(env.browserTimeout);
       page.setDefaultNavigationTimeout(env.browserTimeout);
 
-      scraperLogger.info('⚙️ Page configured successfully');
+      scraperLogger.info("⚙️ Page configured successfully");
     } catch (error) {
-      scraperLogger.error('❌ Failed to configure page:', error);
+      scraperLogger.error("❌ Failed to configure page:", error);
       throw error;
     }
   }
@@ -140,10 +147,10 @@ export class BrowserManager {
     try {
       if (!page.isClosed()) {
         await page.close();
-        scraperLogger.info('📄 Page closed successfully');
+        scraperLogger.info("📄 Page closed successfully");
       }
     } catch (error) {
-      scraperLogger.error('❌ Failed to close page:', error);
+      scraperLogger.error("❌ Failed to close page:", error);
     }
   }
 
@@ -153,10 +160,10 @@ export class BrowserManager {
         await this.browser.close();
         this.browser = null;
         this.activePagesCount = 0;
-        scraperLogger.info('✅ Browser closed successfully');
+        scraperLogger.info("✅ Browser closed successfully");
       }
     } catch (error) {
-      scraperLogger.error('❌ Failed to close browser:', error);
+      scraperLogger.error("❌ Failed to close browser:", error);
     }
   }
 
@@ -179,7 +186,7 @@ export class BrowserManager {
       const version = await this.browser.version();
       const userAgent = await this.browser.userAgent();
       const pages = await this.browser.pages();
-      
+
       return {
         version,
         userAgent,
@@ -188,7 +195,7 @@ export class BrowserManager {
         isConnected: this.browser.isConnected(),
       };
     } catch (error) {
-      scraperLogger.error('❌ Failed to get browser info:', error);
+      scraperLogger.error("❌ Failed to get browser info:", error);
       return null;
     }
   }
@@ -197,11 +204,14 @@ export class BrowserManager {
   public static async randomDelay(min = 1000, max = 3000): Promise<void> {
     const delay = Math.floor(Math.random() * (max - min + 1)) + min;
     scraperLogger.debug(`⏳ Waiting ${delay}ms...`);
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
   // Utility method to scroll page naturally
-  public static async naturalScroll(page: Page, scrollDistance = 500): Promise<void> {
+  public static async naturalScroll(
+    page: Page,
+    scrollDistance = 500
+  ): Promise<void> {
     await page.evaluate((distance) => {
       return new Promise<void>((resolve) => {
         let totalHeight = 0;

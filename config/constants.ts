@@ -1,24 +1,25 @@
 // Puppeteer Configuration
 export const BROWSER_CONFIG = {
   headless: true,
-  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  userAgent:
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   viewport: {
     width: 1920,
     height: 1080,
   },
   args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-accelerated-2d-canvas',
-    '--no-first-run',
-    '--no-zygote',
-    '--disable-gpu',
-    '--disable-background-timer-throttling',
-    '--disable-backgrounding-occluded-windows',
-    '--disable-renderer-backgrounding',
-    '--disable-features=TranslateUI',
-    '--disable-ipc-flooding-protection',
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-accelerated-2d-canvas",
+    "--no-first-run",
+    "--no-zygote",
+    "--disable-gpu",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-renderer-backgrounding",
+    "--disable-features=TranslateUI",
+    "--disable-ipc-flooding-protection",
   ],
 } as const;
 
@@ -33,8 +34,8 @@ export const SCROLL_CONFIG = {
 // Facebook Selectors
 export const FACEBOOK_SELECTORS = {
   login: {
-    email: '#email',
-    password: '#pass',
+    email: "#email",
+    password: "#pass",
     loginButton: '[name="login"]',
     twoFactorCode: '[name="approvals_code"]',
   },
@@ -57,38 +58,38 @@ export const FACEBOOK_SELECTORS = {
 // API Endpoints
 export const API_ROUTES = {
   scraping: {
-    start: '/api/scraping/start',
-    stop: '/api/scraping/stop',
-    status: '/api/scraping/status',
+    start: "/api/scraping/start",
+    stop: "/api/scraping/stop",
+    status: "/api/scraping/status",
   },
   jobs: {
-    list: '/api/jobs',
-    get: '/api/jobs/[id]',
-    delete: '/api/jobs/[id]',
+    list: "/api/jobs",
+    get: "/api/jobs/[id]",
+    delete: "/api/jobs/[id]",
   },
   groups: {
-    list: '/api/groups',
-    add: '/api/groups',
-    delete: '/api/groups/[id]',
-    update: '/api/groups/[id]',
+    list: "/api/groups",
+    add: "/api/groups",
+    delete: "/api/groups/[id]",
+    update: "/api/groups/[id]",
   },
   dashboard: {
-    stats: '/api/dashboard/stats',
+    stats: "/api/dashboard/stats",
   },
 } as const;
 
 // Database Configuration
 export const DB_CONFIG = {
   collections: {
-    jobs: 'job_posts',
-    groups: 'facebook_groups',
-    sessions: 'scraping_sessions',
-    credentials: 'user_credentials',
+    jobs: "job_posts",
+    groups: "facebook_groups",
+    sessions: "scraping_sessions",
+    credentials: "user_credentials",
   },
   indexes: {
-    jobs: ['postId', 'groupId', 'scrapedAt', 'isProcessed'],
-    groups: ['groupId', 'url'],
-    sessions: ['sessionId', 'status', 'startTime'],
+    jobs: ["postId", "groupId", "scrapedAt", "isProcessed"],
+    groups: ["groupId", "url"],
+    sessions: ["sessionId", "status", "startTime"],
   },
 } as const;
 
@@ -106,37 +107,37 @@ export const RATE_LIMITS = {
 
 // Job Processing Configuration
 export const JOB_KEYWORDS = [
-  'hiring',
-  'job',
-  'position',
-  'vacancy',
-  'career',
-  'opportunity',
-  'work',
-  'employment',
-  'recruiter',
-  'developer',
-  'engineer',
-  'designer',
-  'manager',
-  'analyst',
-  'coordinator',
-  'specialist',
-  'consultant',
-  'intern',
-  'freelance',
-  'remote',
-  'full-time',
-  'part-time',
-  'contract',
+  "hiring",
+  "job",
+  "position",
+  "vacancy",
+  "career",
+  "opportunity",
+  "work",
+  "employment",
+  "recruiter",
+  "developer",
+  "engineer",
+  "designer",
+  "manager",
+  "analyst",
+  "coordinator",
+  "specialist",
+  "consultant",
+  "intern",
+  "freelance",
+  "remote",
+  "full-time",
+  "part-time",
+  "contract",
 ] as const;
 
 export const LOCATION_KEYWORDS = [
-  'remote',
-  'hybrid',
-  'on-site',
-  'location',
-  'based in',
-  'work from',
-  'office',
+  "remote",
+  "hybrid",
+  "on-site",
+  "location",
+  "based in",
+  "work from",
+  "office",
 ] as const;

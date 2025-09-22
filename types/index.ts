@@ -21,7 +21,7 @@ export interface JobPost {
     company?: string;
     location?: string;
     salary?: string;
-    type?: 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship';
+    type?: "full-time" | "part-time" | "contract" | "freelance" | "internship";
     description?: string;
     requirements?: string[];
     contactInfo?: string;
@@ -52,7 +52,7 @@ export interface ScrapingSession {
   groupId: string;
   startTime: Date;
   endTime?: Date;
-  status: 'running' | 'completed' | 'failed' | 'paused';
+  status: "running" | "completed" | "failed" | "paused";
   postsScraped: number;
   errorCount: number;
   lastError?: string;
@@ -135,8 +135,8 @@ export interface JobFilters {
   jobType?: string[];
   location?: string;
   keywords?: string;
-  sortBy?: 'date' | 'engagement' | 'relevance';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "date" | "engagement" | "relevance";
+  sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
 }
