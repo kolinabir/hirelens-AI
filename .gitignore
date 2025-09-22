@@ -37,6 +37,9 @@ yarn-error.log*
 logs/
 *.log
 
+# browser sessions (contains fingerprints and cookies)
+browser-sessions/
+
 # vercel
 .vercel
 
