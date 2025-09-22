@@ -26,10 +26,10 @@ export async function POST() {
 
     if (loginSuccess) {
       apiLogger.info("✅ Facebook login test successful!");
-      
+
       // Take a screenshot to verify we're logged in
       const currentUrl = page.url();
-      
+
       return NextResponse.json({
         success: true,
         message: "Facebook login successful",
@@ -40,7 +40,7 @@ export async function POST() {
       });
     } else {
       apiLogger.error("❌ Facebook login test failed");
-      
+
       return NextResponse.json({
         success: false,
         message: "Facebook login failed",
@@ -52,7 +52,7 @@ export async function POST() {
     }
   } catch (error) {
     apiLogger.error("❌ Error during Facebook login test:", error);
-    
+
     return NextResponse.json(
       {
         success: false,
