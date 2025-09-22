@@ -1,0 +1,247 @@
+import { MongoClient, Db, Collection, Document, Filter } from 'mongodb';
+import { env } from '../config/env';
+import { DB_CONFIG } from '../config/constants';
+import type { JobPost, FacebookGroup, ScrapingSession, UserCredentials, DashboardStats } from '../types';
+
+class DatabaseConnection {
+  private static instance: DatabaseConnection;
+  private client: MongoClient | null = null;
+  private db: Db | null = null;
+
+  private constructor() {}
+
+  public static getInstance(): DatabaseConnection {
+    if (!DatabaseConnection.instance) {
+      DatabaseConnection.instance = new DatabaseConnection();
+    }
+    return DatabaseConnection.instance;
+  }
+
+  public async connect(): Promise<void> {
+    try {
+      if (this.client && this.db) {
+        return; // Already connected
+      }
+
+      console.log('🔄 Connecting to MongoDB...');
+      this.client = new MongoClient(env.mongodbUri);
+      await this.client.connect();
+      this.db = this.client.db(env.mongodbDbName);
+      
+      // Create indexes
+      await this.createIndexes();
+      
+      console.log('✅ Connected to MongoDB successfully');
+    } catch (error) {
+      console.error('❌ Failed to connect to MongoDB:', error);
+      throw error;
+    }
+  }
+
+  public async disconnect(): Promise<void> {
+    if (this.client) {
+      await this.client.close();
+      this.client = null;
+      this.db = null;
+      console.log('✅ Disconnected from MongoDB');
+    }
+  }
+
+  public getDb(): Db {
+    if (!this.db) {
+      throw new Error('Database not connected. Call connect() first.');
+    }
+    return this.db;
+  }
+
+  public getCollection<T extends Document>(collectionName: string): Collection<T> {
+    return this.getDb().collection<T>(collectionName);
+  }
+
+  // Typed collection getters
+  public getJobsCollection(): Collection<JobPost> {
+    return this.getCollection<JobPost>(DB_CONFIG.collections.jobs);
+  }
+
+  public getGroupsCollection(): Collection<FacebookGroup> {
+    return this.getCollection<FacebookGroup>(DB_CONFIG.collections.groups);
+  }
+
+  public getSessionsCollection(): Collection<ScrapingSession> {
+    return this.getCollection<ScrapingSession>(DB_CONFIG.collections.sessions);
+  }
+
+  public getCredentialsCollection(): Collection<UserCredentials> {
+    return this.getCollection<UserCredentials>(DB_CONFIG.collections.credentials);
+  }
+
+  private async createIndexes(): Promise<void> {
+    try {
+      const db = this.getDb();
+
+      // Job posts indexes
+      const jobsCollection = db.collection(DB_CONFIG.collections.jobs);
+      await Promise.all([
+        jobsCollection.createIndex({ postId: 1 }, { unique: true }),
+        jobsCollection.createIndex({ groupId: 1 }),
+        jobsCollection.createIndex({ scrapedAt: -1 }),
+        jobsCollection.createIndex({ isProcessed: 1 }),
+        jobsCollection.createIndex({ isDuplicate: 1 }),
+        jobsCollection.createIndex({ 'jobDetails.type': 1 }),
+        jobsCollection.createIndex({ 'jobDetails.location': 1 }),
+        jobsCollection.createIndex({ tags: 1 }),
+        jobsCollection.createIndex({ content: 'text', 'jobDetails.title': 'text', 'jobDetails.description': 'text' }),
+      ]);
+
+      // Groups indexes
+      const groupsCollection = db.collection(DB_CONFIG.collections.groups);
+      await Promise.all([
+        groupsCollection.createIndex({ groupId: 1 }, { unique: true }),
+        groupsCollection.createIndex({ url: 1 }, { unique: true }),
+        groupsCollection.createIndex({ isActive: 1 }),
+        groupsCollection.createIndex({ lastScraped: -1 }),
+      ]);
+
+      // Sessions indexes
+      const sessionsCollection = db.collection(DB_CONFIG.collections.sessions);
+      await Promise.all([
+        sessionsCollection.createIndex({ sessionId: 1 }, { unique: true }),
+        sessionsCollection.createIndex({ status: 1 }),
+        sessionsCollection.createIndex({ startTime: -1 }),
+        sessionsCollection.createIndex({ groupId: 1 }),
+      ]);
+
+      // Credentials indexes
+      const credentialsCollection = db.collection(DB_CONFIG.collections.credentials);
+      await Promise.all([
+        credentialsCollection.createIndex({ email: 1 }, { unique: true }),
+        credentialsCollection.createIndex({ isActive: 1 }),
+        credentialsCollection.createIndex({ isBlocked: 1 }),
+      ]);
+
+      console.log('✅ Database indexes created successfully');
+    } catch (error) {
+      console.error('❌ Failed to create indexes:', error);
+      throw error;
+    }
+  }
+
+  // Health check
+  public async healthCheck(): Promise<boolean> {
+    try {
+      if (!this.db) {
+        return false;
+      }
+      await this.db.admin().ping();
+      return true;
+    } catch (error) {
+      console.error('Database health check failed:', error);
+      return false;
+    }
+  }
+}
+
+// Export singleton instance
+export const dbConnection = DatabaseConnection.getInstance();
+
+// Utility functions for common database operations
+export class DatabaseUtils {
+  // Job Posts operations
+  static async insertJobPost(jobPost: Omit<JobPost, '_id'>): Promise<string> {
+    const collection = dbConnection.getJobsCollection();
+    const result = await collection.insertOne(jobPost);
+    return result.insertedId.toString();
+  }
+
+  static async findJobPosts(filter: Filter<JobPost> = {}, limit = 50, skip = 0): Promise<JobPost[]> {
+    const collection = dbConnection.getJobsCollection();
+    return await collection
+      .find(filter)
+      .sort({ scrapedAt: -1 })
+      .limit(limit)
+      .skip(skip)
+      .toArray();
+  }
+
+  static async countJobPosts(filter: Filter<JobPost> = {}): Promise<number> {
+    const collection = dbConnection.getJobsCollection();
+    return await collection.countDocuments(filter);
+  }
+
+  static async updateJobPost(postId: string, update: Partial<JobPost>): Promise<boolean> {
+    const collection = dbConnection.getJobsCollection();
+    const result = await collection.updateOne({ postId }, { $set: update });
+    return result.modifiedCount > 0;
+  }
+
+  static async deleteJobPost(postId: string): Promise<boolean> {
+    const collection = dbConnection.getJobsCollection();
+    const result = await collection.deleteOne({ postId });
+    return result.deletedCount > 0;
+  }
+
+  // Groups operations
+  static async insertGroup(group: Omit<FacebookGroup, '_id'>): Promise<string> {
+    const collection = dbConnection.getGroupsCollection();
+    const result = await collection.insertOne(group);
+    return result.insertedId.toString();
+  }
+
+  static async findGroups(filter: Filter<FacebookGroup> = {}): Promise<FacebookGroup[]> {
+    const collection = dbConnection.getGroupsCollection();
+    return await collection.find(filter).toArray();
+  }
+
+  static async updateGroup(groupId: string, update: Partial<FacebookGroup>): Promise<boolean> {
+    const collection = dbConnection.getGroupsCollection();
+    const result = await collection.updateOne({ groupId }, { $set: update });
+    return result.modifiedCount > 0;
+  }
+
+  static async deleteGroup(groupId: string): Promise<boolean> {
+    const collection = dbConnection.getGroupsCollection();
+    const result = await collection.deleteOne({ groupId });
+    return result.deletedCount > 0;
+  }
+
+  // Sessions operations
+  static async insertSession(session: Omit<ScrapingSession, '_id'>): Promise<string> {
+    const collection = dbConnection.getSessionsCollection();
+    const result = await collection.insertOne(session);
+    return result.insertedId.toString();
+  }
+
+  static async findActiveSessions(): Promise<ScrapingSession[]> {
+    const collection = dbConnection.getSessionsCollection();
+    return await collection.find({ status: 'running' }).toArray();
+  }
+
+  static async updateSession(sessionId: string, update: Partial<ScrapingSession>): Promise<boolean> {
+    const collection = dbConnection.getSessionsCollection();
+    const result = await collection.updateOne({ sessionId }, { $set: update });
+    return result.modifiedCount > 0;
+  }
+
+  // Dashboard stats
+  static async getDashboardStats(): Promise<DashboardStats> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [totalJobs, todayJobs, activeGroups, activeSessions] = await Promise.all([
+      DatabaseUtils.countJobPosts(),
+      DatabaseUtils.countJobPosts({ scrapedAt: { $gte: today } }),
+      DatabaseUtils.countJobPosts({ isActive: true }),
+      dbConnection.getSessionsCollection().countDocuments({ status: 'running' }),
+    ]);
+
+    return {
+      totalJobs,
+      todayJobs,
+      activeGroups,
+      activeSessions,
+      lastUpdate: new Date(),
+    };
+  }
+}
+
+export default dbConnection;
