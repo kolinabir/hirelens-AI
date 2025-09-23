@@ -14,7 +14,9 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "groups" | "jobs" | "scraper">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "groups" | "jobs" | "scraper"
+  >("overview");
 
   useEffect(() => {
     fetchDashboardData();
@@ -23,28 +25,28 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch all data in parallel
       const [statsRes, groupsRes, jobsRes] = await Promise.all([
         fetch("/api/dashboard/stats"),
         fetch("/api/groups"),
-        fetch("/api/jobs?limit=50")
+        fetch("/api/jobs?limit=50"),
       ]);
 
       const [statsResult, groupsResult, jobsResult] = await Promise.all([
         statsRes.json(),
         groupsRes.json(),
-        jobsRes.json()
+        jobsRes.json(),
       ]);
 
       if (statsResult.success) {
         setStats(statsResult.data);
       }
-      
+
       if (groupsResult.success) {
         setGroups(groupsResult.data);
       }
-      
+
       if (jobsResult.data) {
         setJobs(jobsResult.data);
       }
@@ -106,8 +108,12 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Job Scraper Dashboard</h1>
-              <p className="text-gray-600">Manage your Facebook group scraping operations</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Job Scraper Dashboard
+              </h1>
+              <p className="text-gray-600">
+                Manage your Facebook group scraping operations
+              </p>
             </div>
             <div className="flex gap-2">
               <button
@@ -156,38 +162,54 @@ export default function Dashboard() {
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Total Jobs</h3>
-                      <p className="text-3xl font-bold text-blue-600">{stats.totalJobs}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Total Jobs
+                      </h3>
+                      <p className="text-3xl font-bold text-blue-600">
+                        {stats.totalJobs}
+                      </p>
                     </div>
                     <div className="text-4xl">💼</div>
                   </div>
                 </div>
-                
+
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Active Groups</h3>
-                      <p className="text-3xl font-bold text-green-600">{stats.activeGroups}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Active Groups
+                      </h3>
+                      <p className="text-3xl font-bold text-green-600">
+                        {stats.activeGroups}
+                      </p>
                     </div>
                     <div className="text-4xl">👥</div>
                   </div>
                 </div>
-                
+
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Jobs Today</h3>
-                      <p className="text-3xl font-bold text-purple-600">{stats.totalJobs}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Jobs Today
+                      </h3>
+                      <p className="text-3xl font-bold text-purple-600">
+                        {stats.totalJobs}
+                      </p>
                     </div>
                     <div className="text-4xl">📅</div>
                   </div>
                 </div>
-                
+
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">This Week</h3>
-                      <p className="text-3xl font-bold text-orange-600">{stats.totalJobs}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        This Week
+                      </h3>
+                      <p className="text-3xl font-bold text-orange-600">
+                        {stats.totalJobs}
+                      </p>
                     </div>
                     <div className="text-4xl">📈</div>
                   </div>
@@ -207,16 +229,18 @@ export default function Dashboard() {
                   <div className="font-medium">Start Scraping</div>
                   <div className="text-sm text-gray-600">Run manual scrape</div>
                 </button>
-                
+
                 <button
                   onClick={() => setActiveTab("groups")}
                   className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
                 >
                   <div className="text-2xl mb-2">➕</div>
                   <div className="font-medium">Add Groups</div>
-                  <div className="text-sm text-gray-600">Manage Facebook groups</div>
+                  <div className="text-sm text-gray-600">
+                    Manage Facebook groups
+                  </div>
                 </button>
-                
+
                 <button
                   onClick={() => setActiveTab("jobs")}
                   className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
@@ -227,23 +251,32 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-            
+
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="text-lg font-semibold mb-4">Recent Groups</h3>
                 {groups.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No groups added yet</p>
+                  <p className="text-gray-500 text-center py-4">
+                    No groups added yet
+                  </p>
                 ) : (
                   groups.slice(0, 5).map((group) => (
-                    <div key={group._id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                    <div
+                      key={group._id}
+                      className="flex items-center justify-between py-2 border-b last:border-b-0"
+                    >
                       <div>
                         <div className="font-medium">{group.name}</div>
-                        <div className="text-sm text-gray-600">{group.totalPostsScraped} posts</div>
+                        <div className="text-sm text-gray-600">
+                          {group.totalPostsScraped} posts
+                        </div>
                       </div>
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
-                          group.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          group.isActive
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {group.isActive ? "Active" : "Inactive"}
@@ -252,19 +285,25 @@ export default function Dashboard() {
                   ))
                 )}
               </div>
-              
+
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="text-lg font-semibold mb-4">Recent Jobs</h3>
                 {jobs.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No jobs found yet</p>
+                  <p className="text-gray-500 text-center py-4">
+                    No jobs found yet
+                  </p>
                 ) : (
                   jobs.slice(0, 5).map((job) => (
-                    <div key={job._id} className="py-2 border-b last:border-b-0">
+                    <div
+                      key={job._id}
+                      className="py-2 border-b last:border-b-0"
+                    >
                       <div className="font-medium truncate">
                         {job.jobDetails.title || "Untitled Job"}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {job.author.name} • {new Date(job.postedDate).toLocaleDateString()}
+                        {job.author.name} •{" "}
+                        {new Date(job.postedDate).toLocaleDateString()}
                       </div>
                     </div>
                   ))
@@ -313,9 +352,7 @@ export default function Dashboard() {
           <GroupsManager groups={groups} onUpdate={handleGroupsUpdate} />
         )}
 
-        {activeTab === "jobs" && (
-          <JobPostsList jobs={jobs} />
-        )}
+        {activeTab === "jobs" && <JobPostsList jobs={jobs} />}
 
         {activeTab === "scraper" && (
           <ScraperStatus onUpdate={handleGroupsUpdate} />

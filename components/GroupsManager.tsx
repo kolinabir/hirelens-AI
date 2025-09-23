@@ -8,7 +8,10 @@ interface GroupsManagerProps {
   onUpdate: () => void;
 }
 
-export default function GroupsManager({ groups, onUpdate }: GroupsManagerProps) {
+export default function GroupsManager({
+  groups,
+  onUpdate,
+}: GroupsManagerProps) {
   const [newGroupUrl, setNewGroupUrl] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [editingGroup, setEditingGroup] = useState<FacebookGroup | null>(null);
@@ -106,9 +109,11 @@ export default function GroupsManager({ groups, onUpdate }: GroupsManagerProps) 
       {/* Groups List */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold">Facebook Groups ({groups.length})</h3>
+          <h3 className="text-lg font-semibold">
+            Facebook Groups ({groups.length})
+          </h3>
         </div>
-        
+
         {groups.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
             No groups added yet. Add your first Facebook group above.
@@ -120,7 +125,9 @@ export default function GroupsManager({ groups, onUpdate }: GroupsManagerProps) 
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-medium text-gray-900">{group.name}</h4>
+                      <h4 className="font-medium text-gray-900">
+                        {group.name}
+                      </h4>
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
                           group.isActive
@@ -131,14 +138,15 @@ export default function GroupsManager({ groups, onUpdate }: GroupsManagerProps) 
                         {group.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
-                    
+
                     <p className="text-sm text-gray-600 mb-2">{group.url}</p>
-                    
+
                     <div className="text-sm text-gray-500 space-y-1">
                       <div>Posts scraped: {group.totalPostsScraped}</div>
                       {group.lastScraped && (
                         <div>
-                          Last scraped: {new Date(group.lastScraped).toLocaleString()}
+                          Last scraped:{" "}
+                          {new Date(group.lastScraped).toLocaleString()}
                         </div>
                       )}
                       {group.memberCount && (
@@ -146,7 +154,7 @@ export default function GroupsManager({ groups, onUpdate }: GroupsManagerProps) 
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 ml-4">
                     <button
                       onClick={() => handleToggleActive(group)}
@@ -158,14 +166,14 @@ export default function GroupsManager({ groups, onUpdate }: GroupsManagerProps) 
                     >
                       {group.isActive ? "Deactivate" : "Activate"}
                     </button>
-                    
+
                     <button
                       onClick={() => setEditingGroup(group)}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
                     >
                       Edit
                     </button>
-                    
+
                     <button
                       onClick={() => handleDeleteGroup(group.groupId)}
                       className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded hover:bg-red-200"
@@ -199,7 +207,7 @@ export default function GroupsManager({ groups, onUpdate }: GroupsManagerProps) 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Description
@@ -207,14 +215,17 @@ export default function GroupsManager({ groups, onUpdate }: GroupsManagerProps) 
                 <textarea
                   value={editingGroup.description || ""}
                   onChange={(e) =>
-                    setEditingGroup({ ...editingGroup, description: e.target.value })
+                    setEditingGroup({
+                      ...editingGroup,
+                      description: e.target.value,
+                    })
                   }
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setEditingGroup(null)}
@@ -225,12 +236,15 @@ export default function GroupsManager({ groups, onUpdate }: GroupsManagerProps) 
               <button
                 onClick={async () => {
                   try {
-                    const response = await fetch(`/api/groups/${editingGroup._id}`, {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(editingGroup),
-                    });
-                    
+                    const response = await fetch(
+                      `/api/groups/${editingGroup._id}`,
+                      {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(editingGroup),
+                      }
+                    );
+
                     if (response.ok) {
                       setEditingGroup(null);
                       onUpdate();

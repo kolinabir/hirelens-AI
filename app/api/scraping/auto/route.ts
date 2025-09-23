@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apifyService } from "@/lib/apify-service";
 import { DatabaseUtils } from "@/lib/database";
 import { apiLogger } from "@/lib/logger";
 

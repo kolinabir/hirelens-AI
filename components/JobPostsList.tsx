@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { JobPost } from "@/types";
 
 interface JobPostsListProps {
@@ -26,10 +27,14 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
     })
     .sort((a, b) => {
       if (sortBy === "date") {
-        return new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime();
+        return (
+          new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
+        );
       } else {
-        const aEngagement = a.engagementMetrics.likes + a.engagementMetrics.comments;
-        const bEngagement = b.engagementMetrics.likes + b.engagementMetrics.comments;
+        const aEngagement =
+          a.engagementMetrics.likes + a.engagementMetrics.comments;
+        const bEngagement =
+          b.engagementMetrics.likes + b.engagementMetrics.comments;
         return bEngagement - aEngagement;
       }
     });
@@ -63,11 +68,13 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          
+
           <div className="flex gap-3">
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "date" | "engagement")}
+              onChange={(e) =>
+                setSortBy(e.target.value as "date" | "engagement")
+              }
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="date">Sort by Date</option>
@@ -75,7 +82,7 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
             </select>
           </div>
         </div>
-        
+
         <div className="mt-4 text-sm text-gray-600">
           Showing {filteredJobs.length} of {jobs.length} job posts
         </div>
@@ -85,37 +92,43 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
       <div className="space-y-4">
         {filteredJobs.length === 0 ? (
           <div className="bg-white p-8 rounded-lg shadow text-center text-gray-500">
-            {jobs.length === 0 
+            {jobs.length === 0
               ? "No job posts found. Run the scraper to get job posts."
-              : "No job posts match your search criteria."
-            }
+              : "No job posts match your search criteria."}
           </div>
         ) : (
           filteredJobs.map((job) => (
-            <div key={job._id} className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+            <div
+              key={job._id}
+              className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow"
+            >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-2">
                     <div className="flex items-center gap-2">
                       {job.author.profileImage && (
-                        <img
+                        <Image
                           src={job.author.profileImage}
                           alt={job.author.name}
+                          width={32}
+                          height={32}
                           className="w-8 h-8 rounded-full"
                         />
                       )}
                       <div>
-                        <h4 className="font-medium text-gray-900">{job.author.name}</h4>
+                        <h4 className="font-medium text-gray-900">
+                          {job.author.name}
+                        </h4>
                         <p className="text-sm text-gray-500">{job.groupName}</p>
                       </div>
                     </div>
-                    
+
                     <span className="text-sm text-gray-500">•</span>
                     <span className="text-sm text-gray-500">
                       {formatDate(job.postedDate)}
                     </span>
-                    
+
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${
                         job.source === "apify"
@@ -139,19 +152,25 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
                     {job.jobDetails.company && (
                       <div>
                         <span className="text-gray-600">Company:</span>
-                        <span className="ml-1 font-medium">{job.jobDetails.company}</span>
+                        <span className="ml-1 font-medium">
+                          {job.jobDetails.company}
+                        </span>
                       </div>
                     )}
                     {job.jobDetails.location && (
                       <div>
                         <span className="text-gray-600">Location:</span>
-                        <span className="ml-1 font-medium">{job.jobDetails.location}</span>
+                        <span className="ml-1 font-medium">
+                          {job.jobDetails.location}
+                        </span>
                       </div>
                     )}
                     {job.jobDetails.type && (
                       <div>
                         <span className="text-gray-600">Type:</span>
-                        <span className="ml-1 font-medium capitalize">{job.jobDetails.type}</span>
+                        <span className="ml-1 font-medium capitalize">
+                          {job.jobDetails.type}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -174,7 +193,7 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
                     <span>👍 {job.engagementMetrics.likes}</span>
                     <span>💬 {job.engagementMetrics.comments}</span>
                     <span>📤 {job.engagementMetrics.shares}</span>
-                    
+
                     {job.apifyData?.facebookUrl && (
                       <a
                         href={job.apifyData.facebookUrl}
@@ -189,24 +208,29 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
                 </div>
 
                 {/* Attachments Preview */}
-                {job.apifyData?.attachments && job.apifyData.attachments.length > 0 && (
-                  <div className="ml-4">
-                    <div className="text-xs text-gray-500 mb-1">
-                      {job.apifyData.attachments.length} attachment(s)
-                    </div>
-                    {job.apifyData.attachments.slice(0, 2).map((attachment, index) => (
-                      <div key={index} className="mb-2">
-                        {attachment.photo_image && (
-                          <img
-                            src={attachment.photo_image.uri}
-                            alt="Attachment"
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                        )}
+                {job.apifyData?.attachments &&
+                  job.apifyData.attachments.length > 0 && (
+                    <div className="ml-4">
+                      <div className="text-xs text-gray-500 mb-1">
+                        {job.apifyData.attachments.length} attachment(s)
                       </div>
-                    ))}
-                  </div>
-                )}
+                      {job.apifyData.attachments
+                        .slice(0, 2)
+                        .map((attachment, index) => (
+                          <div key={index} className="mb-2">
+                            {attachment.photo_image && (
+                              <Image
+                                src={attachment.photo_image.uri}
+                                alt="Attachment"
+                                width={64}
+                                height={64}
+                                className="w-16 h-16 object-cover rounded"
+                              />
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
               </div>
 
               {/* Tags */}
@@ -253,76 +277,122 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
               {/* Full Content */}
               <div className="space-y-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Full Post Content</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Full Post Content
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap">
                     {selectedJob.content}
                   </div>
                 </div>
 
                 {/* Job Details */}
-                {(selectedJob.jobDetails.company || selectedJob.jobDetails.location || selectedJob.jobDetails.salary) && (
+                {(selectedJob.jobDetails.company ||
+                  selectedJob.jobDetails.location ||
+                  selectedJob.jobDetails.salary) && (
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Job Information</h3>
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      Job Information
+                    </h3>
                     <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                       {selectedJob.jobDetails.company && (
-                        <div><strong>Company:</strong> {selectedJob.jobDetails.company}</div>
+                        <div>
+                          <strong>Company:</strong>{" "}
+                          {selectedJob.jobDetails.company}
+                        </div>
                       )}
                       {selectedJob.jobDetails.location && (
-                        <div><strong>Location:</strong> {selectedJob.jobDetails.location}</div>
+                        <div>
+                          <strong>Location:</strong>{" "}
+                          {selectedJob.jobDetails.location}
+                        </div>
                       )}
                       {selectedJob.jobDetails.salary && (
-                        <div><strong>Salary:</strong> {selectedJob.jobDetails.salary}</div>
+                        <div>
+                          <strong>Salary:</strong>{" "}
+                          {selectedJob.jobDetails.salary}
+                        </div>
                       )}
                       {selectedJob.jobDetails.type && (
-                        <div><strong>Type:</strong> {selectedJob.jobDetails.type}</div>
+                        <div>
+                          <strong>Type:</strong> {selectedJob.jobDetails.type}
+                        </div>
                       )}
                     </div>
                   </div>
                 )}
 
                 {/* Requirements */}
-                {selectedJob.jobDetails.requirements && selectedJob.jobDetails.requirements.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Requirements</h3>
-                    <ul className="bg-gray-50 p-4 rounded-lg list-disc list-inside space-y-1">
-                      {selectedJob.jobDetails.requirements.map((req, index) => (
-                        <li key={index}>{req}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {selectedJob.jobDetails.requirements &&
+                  selectedJob.jobDetails.requirements.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Requirements
+                      </h3>
+                      <ul className="bg-gray-50 p-4 rounded-lg list-disc list-inside space-y-1">
+                        {selectedJob.jobDetails.requirements.map(
+                          (req, index) => (
+                            <li key={index}>{req}</li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
 
                 {/* Attachments */}
-                {selectedJob.apifyData?.attachments && selectedJob.apifyData.attachments.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Attachments</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {selectedJob.apifyData.attachments.map((attachment, index) => (
-                        <div key={index} className="bg-gray-50 p-2 rounded-lg">
-                          {attachment.photo_image && (
-                            <img
-                              src={attachment.photo_image.uri}
-                              alt={`Attachment ${index + 1}`}
-                              className="w-full h-32 object-cover rounded"
-                            />
-                          )}
-                          {attachment.ocrText && (
-                            <p className="text-xs text-gray-600 mt-2">{attachment.ocrText}</p>
-                          )}
-                        </div>
-                      ))}
+                {selectedJob.apifyData?.attachments &&
+                  selectedJob.apifyData.attachments.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Attachments
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {selectedJob.apifyData.attachments.map(
+                          (attachment, index) => (
+                            <div
+                              key={index}
+                              className="bg-gray-50 p-2 rounded-lg"
+                            >
+                              {attachment.photo_image && (
+                                <Image
+                                  src={attachment.photo_image.uri}
+                                  alt={`Attachment ${index + 1}`}
+                                  width={400}
+                                  height={128}
+                                  className="w-full h-32 object-cover rounded"
+                                />
+                              )}
+                              {attachment.ocrText && (
+                                <p className="text-xs text-gray-600 mt-2">
+                                  {attachment.ocrText}
+                                </p>
+                              )}
+                            </div>
+                          )
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Meta Information */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Meta Information</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Meta Information
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-lg text-sm space-y-1">
-                    <div><strong>Posted:</strong> {formatDate(selectedJob.postedDate)}</div>
-                    <div><strong>Scraped:</strong> {formatDate(selectedJob.scrapedAt)}</div>
-                    <div><strong>Source:</strong> {selectedJob.source}</div>
-                    <div><strong>Post ID:</strong> {selectedJob.postId}</div>
+                    <div>
+                      <strong>Posted:</strong>{" "}
+                      {formatDate(selectedJob.postedDate)}
+                    </div>
+                    <div>
+                      <strong>Scraped:</strong>{" "}
+                      {formatDate(selectedJob.scrapedAt)}
+                    </div>
+                    <div>
+                      <strong>Source:</strong> {selectedJob.source}
+                    </div>
+                    <div>
+                      <strong>Post ID:</strong> {selectedJob.postId}
+                    </div>
                     {selectedJob.apifyData?.facebookUrl && (
                       <div>
                         <strong>Facebook URL:</strong>{" "}

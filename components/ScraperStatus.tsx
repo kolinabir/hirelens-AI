@@ -37,17 +37,17 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
     try {
       const response = await fetch("/api/scraping/abort");
       const result = await response.json();
-      
+
       if (result.success) {
         setScraperState(result.data);
-        
+
         // Get last scrape time from recent runs
         if (result.data.recentRuns?.length > 0) {
           const lastRun = result.data.recentRuns[0];
           if (lastRun.finishedAt) {
-            setScraperState(prev => ({
+            setScraperState((prev) => ({
               ...prev!,
-              lastScrapeTime: new Date(lastRun.finishedAt!)
+              lastScrapeTime: new Date(lastRun.finishedAt!),
             }));
           }
         }
@@ -85,7 +85,10 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
   };
 
   const handleAbortAll = async () => {
-    if (!confirm("Are you sure you want to abort all running scraper processes?")) return;
+    if (
+      !confirm("Are you sure you want to abort all running scraper processes?")
+    )
+      return;
 
     try {
       const response = await fetch("/api/scraping/abort", {
@@ -115,7 +118,11 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
 
       const result = await response.json();
       if (result.success) {
-        alert(`Processing completed! ${result.data?.processed || 0} new posts added.`);
+        alert(
+          `Processing completed! ${
+            result.data?.processed || 0
+          } new posts added.`
+        );
         onUpdate();
       } else {
         alert(`Error: ${result.error || "Failed to process results"}`);
@@ -145,7 +152,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
       {/* Current Status */}
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="text-lg font-semibold mb-4">Scraper Status</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="text-sm text-gray-600">Running Processes</div>
@@ -153,7 +160,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
               {scraperState?.total || 0}
             </div>
           </div>
-          
+
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="text-sm text-gray-600">Last Scrape</div>
             <div className="text-sm font-medium">
@@ -162,7 +169,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
                 : "Never"}
             </div>
           </div>
-          
+
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="text-sm text-gray-600">Recent Runs</div>
             <div className="text-2xl font-bold text-green-600">
@@ -211,36 +218,43 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
         <div className="bg-white p-6 rounded-lg shadow">
           <h4 className="text-lg font-semibold mb-4">Running Processes</h4>
           <div className="space-y-3">
-            {scraperState.running.map((process: ScraperProcess, index: number) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                <div>
-                  <div className="font-medium">Process {process.id || index + 1}</div>
-                  <div className="text-sm text-gray-600">
-                    Started: {new Date(process.startedAt).toLocaleString()}
-                  </div>
-                </div>
-                <button
-                  onClick={async () => {
-                    try {
-                      const response = await fetch("/api/scraping/abort", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ runId: process.id }),
-                      });
-                      
-                      if (response.ok) {
-                        fetchScraperStatus();
-                      }
-                    } catch (error) {
-                      console.error("Failed to abort process:", error);
-                    }
-                  }}
-                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+            {scraperState.running.map(
+              (process: ScraperProcess, index: number) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg"
                 >
-                  Abort
-                </button>
-              </div>
-            ))}
+                  <div>
+                    <div className="font-medium">
+                      Process {process.id || index + 1}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Started: {new Date(process.startedAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch("/api/scraping/abort", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ runId: process.id }),
+                        });
+
+                        if (response.ok) {
+                          fetchScraperStatus();
+                        }
+                      } catch (error) {
+                        console.error("Failed to abort process:", error);
+                      }
+                    }}
+                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    Abort
+                  </button>
+                </div>
+              )
+            )}
           </div>
         </div>
       )}
@@ -292,7 +306,9 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
                       {new Date(run.startedAt).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {run.finishedAt ? new Date(run.finishedAt).toLocaleString() : "-"}
+                      {run.finishedAt
+                        ? new Date(run.finishedAt).toLocaleString()
+                        : "-"}
                     </td>
                   </tr>
                 ))}
