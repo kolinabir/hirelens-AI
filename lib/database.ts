@@ -204,7 +204,9 @@ export class DatabaseUtils {
       // Generate a unique post ID from the content and user
       const postId = crypto
         .createHash("md5")
-        .update(`${apifyPost.facebookUrl}_${apifyPost.user.id}_${apifyPost.text}`)
+        .update(
+          `${apifyPost.facebookUrl}_${apifyPost.user.id}_${apifyPost.text}`
+        )
         .digest("hex");
 
       // Check if this post already exists
@@ -243,7 +245,7 @@ export class DatabaseUtils {
           user: apifyPost.user,
           likesCount: apifyPost.likesCount,
           commentsCount: apifyPost.commentsCount,
-          attachments: apifyPost.attachments?.map(att => ({
+          attachments: apifyPost.attachments?.map((att) => ({
             thumbnail: att.thumbnail,
             __typename: att.__typename,
             photo_image: att.photo_image,
@@ -256,7 +258,7 @@ export class DatabaseUtils {
         isProcessed: false,
         isDuplicate: false,
         tags: [],
-        source: 'apify',
+        source: "apify",
       };
 
       await DatabaseUtils.insertJobPost(jobPost);

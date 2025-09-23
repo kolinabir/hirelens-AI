@@ -111,7 +111,12 @@ import { apiLogger } from "@/lib/logger";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { groupUrls, maxPosts = 50, scrapeComments = false, scrapePhotos = true } = body;
+    const {
+      groupUrls,
+      maxPosts = 50,
+      scrapeComments = false,
+      scrapePhotos = true,
+    } = body;
 
     // Validation
     if (!groupUrls || !Array.isArray(groupUrls) || groupUrls.length === 0) {
@@ -125,7 +130,9 @@ export async function POST(request: NextRequest) {
     const validUrls = groupUrls.filter((url: string) => {
       try {
         const urlObj = new URL(url);
-        return urlObj.hostname.includes('facebook.com') && url.includes('/groups/');
+        return (
+          urlObj.hostname.includes("facebook.com") && url.includes("/groups/")
+        );
       } catch {
         return false;
       }
@@ -138,11 +145,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    apiLogger.info('Starting manual Facebook group scraping', { 
-      groupUrls: validUrls, 
-      maxPosts, 
-      scrapeComments, 
-      scrapePhotos 
+    apiLogger.info("Starting manual Facebook group scraping", {
+      groupUrls: validUrls,
+      maxPosts,
+      scrapeComments,
+      scrapePhotos,
     });
 
     // Configure Apify scraping
@@ -164,11 +171,11 @@ export async function POST(request: NextRequest) {
 
     for (const groupUrl of validUrls) {
       // Filter posts for this specific group
-      const groupPosts = posts.filter(post => post.facebookUrl === groupUrl);
-      
+      const groupPosts = posts.filter((post) => post.facebookUrl === groupUrl);
+
       // Extract group ID and name from URL
       const groupIdMatch = groupUrl.match(/groups\/([^\/\?]+)/);
-      const groupId = groupIdMatch ? groupIdMatch[1] : 'unknown';
+      const groupId = groupIdMatch ? groupIdMatch[1] : "unknown";
       const groupName = `Group ${groupId}`;
 
       if (groupPosts.length > 0) {
@@ -206,7 +213,8 @@ export async function POST(request: NextRequest) {
           // Update existing group
           await DatabaseUtils.updateGroup(groupId, {
             lastScraped: new Date(),
-            totalPostsScraped: (existingGroups[0].totalPostsScraped || 0) + saved,
+            totalPostsScraped:
+              (existingGroups[0].totalPostsScraped || 0) + saved,
             updatedAt: new Date(),
           });
         }
@@ -227,20 +235,22 @@ export async function POST(request: NextRequest) {
       groups: groupResults,
     };
 
-    apiLogger.info('Manual scraping completed', responseData);
+    apiLogger.info("Manual scraping completed", responseData);
 
     return NextResponse.json({
       success: true,
       data: responseData,
       message: `Successfully scraped ${posts.length} posts from ${validUrls.length} group(s). Saved ${totalSaved} new posts, ${totalDuplicates} duplicates found.`,
     });
-
   } catch (error) {
-    apiLogger.error('Error in manual scraping', { error });
+    apiLogger.error("Error in manual scraping", { error });
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Failed to scrape Facebook groups" 
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to scrape Facebook groups",
       },
       { status: 500 }
     );
@@ -290,23 +300,28 @@ export async function GET() {
   try {
     // Get last successful run info
     const lastResults = await apifyService.getLastRunResults();
-    
+
     return NextResponse.json({
       success: true,
       data: {
         available: true,
         maxPostsPerGroup: 100,
-        supportedFeatures: ["photos", "attachments", "OCR", "engagement_metrics"],
+        supportedFeatures: [
+          "photos",
+          "attachments",
+          "OCR",
+          "engagement_metrics",
+        ],
         lastRun: lastResults.length > 0 ? new Date().toISOString() : null,
         lastRunPostCount: lastResults.length,
       },
     });
   } catch (error) {
-    apiLogger.error('Error getting manual scraping status', { error });
+    apiLogger.error("Error getting manual scraping status", { error });
     return NextResponse.json(
-      { 
-        success: false, 
-        error: "Failed to get scraping status" 
+      {
+        success: false,
+        error: "Failed to get scraping status",
       },
       { status: 500 }
     );

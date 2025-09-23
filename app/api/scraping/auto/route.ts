@@ -71,12 +71,12 @@ import { apiLogger } from "@/lib/logger";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      enabled = true, 
-      frequency = "twice_daily", 
+    const {
+      enabled = true,
+      frequency = "twice_daily",
       customSchedule,
       maxPostsPerGroup = 30,
-      scrapePhotos = true 
+      scrapePhotos = true,
     } = body;
 
     // Store configuration in a simple way (you might want to use a proper config store)
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         nextRun = getNextScheduledTime([9, 15]);
     }
 
-    apiLogger.info('Auto scraping configuration updated', config);
+    apiLogger.info("Auto scraping configuration updated", config);
 
     return NextResponse.json({
       success: true,
@@ -126,13 +126,12 @@ export async function POST(request: NextRequest) {
         config,
       },
     });
-
   } catch (error) {
-    apiLogger.error('Error configuring auto scraping', { error });
+    apiLogger.error("Error configuring auto scraping", { error });
     return NextResponse.json(
-      { 
-        success: false, 
-        error: "Failed to configure auto scraping" 
+      {
+        success: false,
+        error: "Failed to configure auto scraping",
       },
       { status: 500 }
     );
@@ -183,7 +182,7 @@ export async function GET() {
   try {
     // Get active groups
     const activeGroups = await DatabaseUtils.findGroups({ isActive: true });
-    
+
     // Simple config (in a real app, you'd store this in DB)
     const config = {
       enabled: true,
@@ -193,20 +192,19 @@ export async function GET() {
       nextRun: getNextScheduledTime([9, 15]).toISOString(),
       lastRun: null, // You'd track this in DB
       activeGroups: activeGroups.length,
-      groupUrls: activeGroups.map(g => g.url),
+      groupUrls: activeGroups.map((g) => g.url),
     };
 
     return NextResponse.json({
       success: true,
       data: config,
     });
-
   } catch (error) {
-    apiLogger.error('Error getting auto scraping config', { error });
+    apiLogger.error("Error getting auto scraping config", { error });
     return NextResponse.json(
-      { 
-        success: false, 
-        error: "Failed to get auto scraping configuration" 
+      {
+        success: false,
+        error: "Failed to get auto scraping configuration",
       },
       { status: 500 }
     );
@@ -239,19 +237,18 @@ export async function GET() {
 
 export async function DELETE() {
   try {
-    apiLogger.info('Auto scraping disabled');
-    
+    apiLogger.info("Auto scraping disabled");
+
     return NextResponse.json({
       success: true,
       message: "Auto scraping disabled",
     });
-
   } catch (error) {
-    apiLogger.error('Error disabling auto scraping', { error });
+    apiLogger.error("Error disabling auto scraping", { error });
     return NextResponse.json(
-      { 
-        success: false, 
-        error: "Failed to disable auto scraping" 
+      {
+        success: false,
+        error: "Failed to disable auto scraping",
       },
       { status: 500 }
     );
@@ -262,7 +259,7 @@ export async function DELETE() {
 function getNextScheduledTime(hours: number[]): Date {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
+
   // Find next scheduled hour today
   for (const hour of hours.sort()) {
     const scheduledTime = new Date(today.getTime() + hour * 60 * 60 * 1000);
@@ -270,7 +267,7 @@ function getNextScheduledTime(hours: number[]): Date {
       return scheduledTime;
     }
   }
-  
+
   // If no more runs today, schedule for first hour tomorrow
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
   return new Date(tomorrow.getTime() + hours[0] * 60 * 60 * 1000);

@@ -71,13 +71,18 @@ import { apiLogger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  
+
   try {
     // Connect to database
     await dbConnection.connect();
 
     const body = await request.json();
-    const { runId, datasetId, groupId = "devforhire", groupName = "Dev For Hire" } = body;
+    const {
+      runId,
+      datasetId,
+      groupId = "devforhire",
+      groupName = "Dev For Hire",
+    } = body;
 
     if (!runId && !datasetId) {
       return NextResponse.json(
@@ -86,7 +91,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    apiLogger.info('Processing Apify results', { runId, datasetId, groupId });
+    apiLogger.info("Processing Apify results", { runId, datasetId, groupId });
 
     let posts;
 
@@ -129,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
 
     const processingTime = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
-    
+
     const responseData = {
       totalPosts: posts.length,
       saved,
@@ -137,22 +142,27 @@ export async function POST(request: NextRequest) {
       processingTime,
     };
 
-    apiLogger.info('Apify results processed successfully', responseData);
+    apiLogger.info("Apify results processed successfully", responseData);
 
     return NextResponse.json({
       success: true,
       data: responseData,
       message: `Processed ${posts.length} posts, saved ${saved} new posts, ${duplicates} duplicates found in ${processingTime}`,
     });
-
   } catch (error) {
     const processingTime = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
-    apiLogger.error('Error processing Apify results', { error, processingTime });
-    
+    apiLogger.error("Error processing Apify results", {
+      error,
+      processingTime,
+    });
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Failed to process Apify results",
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to process Apify results",
         processingTime,
       },
       { status: 500 }
@@ -212,13 +222,12 @@ export async function GET() {
         note: "Use POST with datasetId: 'nuA7GygxGzXM9AvdQ' to process the 72 posts from the recent run",
       },
     });
-
   } catch (error) {
-    apiLogger.error('Error getting process information', { error });
+    apiLogger.error("Error getting process information", { error });
     return NextResponse.json(
-      { 
-        success: false, 
-        error: "Failed to get process information" 
+      {
+        success: false,
+        error: "Failed to get process information",
       },
       { status: 500 }
     );

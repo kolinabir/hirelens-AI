@@ -52,7 +52,7 @@ export interface JobPost {
   isProcessed: boolean;
   isDuplicate: boolean;
   tags: string[];
-  source: 'apify' | 'puppeteer' | 'manual'; // Track the scraping source
+  source: "apify" | "puppeteer" | "manual"; // Track the scraping source
 }
 
 export interface FacebookGroup {

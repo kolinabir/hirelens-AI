@@ -110,14 +110,14 @@ export async function GET() {
  *                 items:
  *                   type: string
  *                 description: Array of Facebook group URLs
- *                 example: 
+ *                 example:
  *                   - "https://www.facebook.com/groups/devforhire/"
  *                   - "https://www.facebook.com/groups/dhakajobs/"
  *                   - "https://www.facebook.com/groups/bangladeshijobs/"
  *             required:
  *               - urls
  *           example:
- *             urls: 
+ *             urls:
  *               - "https://www.facebook.com/groups/devforhire/"
  *               - "https://www.facebook.com/groups/dhakajobs/"
  *     responses:
@@ -244,8 +244,10 @@ export async function POST(request: NextRequest) {
       try {
         // Extract group ID from URL
         const groupIdMatch = url.match(/groups\/([^\/\?]+)/);
-        const groupId = groupIdMatch ? groupIdMatch[1] : url.replace(/[^\w]/g, "_");
-        
+        const groupId = groupIdMatch
+          ? groupIdMatch[1]
+          : url.replace(/[^\w]/g, "_");
+
         // Check if group already exists
         const existingGroups = await DatabaseUtils.findGroups({ groupId });
         if (existingGroups.length > 0) {

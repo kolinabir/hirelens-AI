@@ -57,12 +57,12 @@ import { apiLogger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  
+
   try {
     // Simple authentication for cron jobs
-    const cronKey = request.headers.get('x-cron-key');
-    const expectedKey = process.env.CRON_SECRET_KEY || 'default-cron-key';
-    
+    const cronKey = request.headers.get("x-cron-key");
+    const expectedKey = process.env.CRON_SECRET_KEY || "default-cron-key";
+
     if (cronKey !== expectedKey) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -70,13 +70,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    apiLogger.info('Starting automatic scraping trigger');
+    apiLogger.info("Starting automatic scraping trigger");
 
     // Get all active groups
     const activeGroups = await DatabaseUtils.findGroups({ isActive: true });
-    
+
     if (activeGroups.length === 0) {
-      apiLogger.info('No active groups found for automatic scraping');
+      apiLogger.info("No active groups found for automatic scraping");
       return NextResponse.json({
         success: true,
         data: {
@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const groupUrls = activeGroups.map(group => group.url);
-    
+    const groupUrls = activeGroups.map((group) => group.url);
+
     // Configure for automatic scraping (lighter than manual)
     const config = {
       groupUrls,
@@ -101,9 +101,9 @@ export async function POST(request: NextRequest) {
       maxPhotos: 3, // Limit photos for faster execution
     };
 
-    apiLogger.info('Executing automatic scraping', { 
+    apiLogger.info("Executing automatic scraping", {
       groupCount: activeGroups.length,
-      config 
+      config,
     });
 
     // Execute scraping
@@ -116,8 +116,8 @@ export async function POST(request: NextRequest) {
 
     for (const group of activeGroups) {
       // Filter posts for this specific group
-      const groupPosts = posts.filter(post => post.facebookUrl === group.url);
-      
+      const groupPosts = posts.filter((post) => post.facebookUrl === group.url);
+
       if (groupPosts.length > 0) {
         // Save posts to database
         const { saved, duplicates } = await DatabaseUtils.saveApifyPosts(
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     }
 
     const executionTime = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
-    
+
     const responseData = {
       totalGroups: activeGroups.length,
       totalPosts: posts.length,
@@ -157,22 +157,27 @@ export async function POST(request: NextRequest) {
       groups: groupResults,
     };
 
-    apiLogger.info('Automatic scraping completed', responseData);
+    apiLogger.info("Automatic scraping completed", responseData);
 
     return NextResponse.json({
       success: true,
       data: responseData,
       message: `Scraped ${posts.length} posts from ${activeGroups.length} groups in ${executionTime}. Saved ${totalSaved} new posts.`,
     });
-
   } catch (error) {
     const executionTime = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
-    apiLogger.error('Error in automatic scraping trigger', { error, executionTime });
-    
+    apiLogger.error("Error in automatic scraping trigger", {
+      error,
+      executionTime,
+    });
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Failed to execute automatic scraping",
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to execute automatic scraping",
         executionTime,
       },
       { status: 500 }
@@ -226,9 +231,9 @@ export async function GET() {
       method: "POST",
       authentication: "x-cron-key header required",
       suggestedSchedule: [
-        "0 9 * * *",   // 9 AM daily
-        "0 15 * * *",  // 3 PM daily
-        "0 21 * * *",  // 9 PM daily (optional)
+        "0 9 * * *", // 9 AM daily
+        "0 15 * * *", // 3 PM daily
+        "0 21 * * *", // 9 PM daily (optional)
       ],
       cronExamples: {
         twice_daily: "0 9,15 * * *",
