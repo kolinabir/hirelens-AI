@@ -259,12 +259,12 @@ export class ApifyService {
    */
   async abortRun(runId: string): Promise<{ success: boolean }> {
     try {
-      apiLogger.info("Aborting Apify run", { runId });
+      apiLogger.info('Aborting Apify run', { runId });
 
       const response = await fetch(
-        `${this.baseUrl}/acts/${this.actorId}/runs/${runId}/abort?token=${this.token}`,
+        `${this.baseUrl}/actor-runs/${runId}/abort?token=${this.token}`,
         {
-          method: "POST",
+          method: 'POST',
         }
       );
 
@@ -273,10 +273,10 @@ export class ApifyService {
         throw new Error(`Apify API error: ${response.status} - ${errorText}`);
       }
 
-      apiLogger.info("Apify run aborted successfully", { runId });
+      apiLogger.info('Apify run aborted successfully', { runId });
       return { success: true };
     } catch (error) {
-      apiLogger.error("Error aborting Apify run", { error, runId });
+      apiLogger.error('Error aborting Apify run', { error, runId });
       throw error;
     }
   }
@@ -312,6 +312,87 @@ export class ApifyService {
         error,
         datasetId,
       });
+      throw error;
+    }
+  }
+
+  /**
+   * Get list of recent runs for this actor
+   */
+  async getRecentRuns(limit = 10): Promise<Array<{
+    id: string;
+    status: string;
+    startedAt: string;
+    finishedAt?: string;
+    datasetId?: string;
+  }>> {
+    try {
+      apiLogger.info('Fetching recent Apify runs', { limit });
+
+      const response = await fetch(
+        `${this.baseUrl}/acts/${this.actorId}/runs?token=${this.token}&limit=${limit}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Apify API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      const runs = data.data?.items || [];
+      
+      const formattedRuns = runs.map((run: {
+        id: string;
+        status: string;
+        startedAt: string;
+        finishedAt?: string;
+        defaultDatasetId?: string;
+      }) => ({
+        id: run.id,
+        status: run.status,
+        startedAt: run.startedAt,
+        finishedAt: run.finishedAt,
+        datasetId: run.defaultDatasetId,
+      }));
+
+      apiLogger.info('Recent Apify runs fetched', { 
+        runsFound: formattedRuns.length 
+      });
+
+      return formattedRuns;
+    } catch (error) {
+      apiLogger.error('Error fetching recent Apify runs', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get currently running processes
+   */
+  async getRunningProcesses(): Promise<Array<{
+    id: string;
+    startedAt: string;
+    datasetId?: string;
+  }>> {
+    try {
+      const runs = await this.getRecentRuns(20);
+      const runningRuns = runs.filter(run => run.status === 'RUNNING');
+      
+      apiLogger.info('Found running Apify processes', { 
+        count: runningRuns.length,
+        runIds: runningRuns.map(r => r.id)
+      });
+
+      return runningRuns.map(run => ({
+        id: run.id,
+        startedAt: run.startedAt,
+        datasetId: run.datasetId,
+      }));
+    } catch (error) {
+      apiLogger.error('Error getting running processes', { error });
       throw error;
     }
   }
