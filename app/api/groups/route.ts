@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnection, DatabaseUtils } from "@/lib/database";
-import { groupNavigator } from "@/lib/group-navigator";
 import { apiLogger } from "@/lib/logger";
 import type { FacebookGroup } from "@/types";
 
@@ -44,8 +43,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate URLs
-    const { valid, invalid } = await groupNavigator.validateGroupUrls(urls);
+    // Simple URL validation
+    const valid: string[] = [];
+    const invalid: string[] = [];
+
+    for (const url of urls) {
+      try {
+        // Basic URL validation
+        const urlObj = new URL(url);
+        if (urlObj.hostname === 'facebook.com' || urlObj.hostname === 'www.facebook.com') {
+          if (url.includes('/groups/')) {
+            valid.push(url);
+          } else {
+            invalid.push(url);
+          }
+        } else {
+          invalid.push(url);
+        }
+      } catch {
+        invalid.push(url);
+      }
+    }
 
     if (invalid.length > 0) {
       apiLogger.warn(`⚠️ Invalid URLs provided: ${invalid.join(", ")}`);

@@ -46,22 +46,6 @@ export interface FacebookGroup {
   updatedAt: Date;
 }
 
-export interface ScrapingSession {
-  _id?: string;
-  sessionId: string;
-  groupId: string;
-  startTime: Date;
-  endTime?: Date;
-  status: "running" | "completed" | "failed" | "paused";
-  postsScraped: number;
-  errorCount: number;
-  lastError?: string;
-  progress: {
-    currentPage: number;
-    estimatedTotal?: number;
-  };
-}
-
 export interface UserCredentials {
   _id?: string;
   email: string;
@@ -79,24 +63,6 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
-}
-
-export interface ScrapingJobRequest {
-  groupUrls: string[];
-  maxPosts?: number;
-  filters?: {
-    keywords?: string[];
-    dateRange?: {
-      from: Date;
-      to: Date;
-    };
-  };
-}
-
-export interface ScrapingJobResponse {
-  jobId: string;
-  status: string;
-  message: string;
 }
 
 // Puppeteer Configuration Types

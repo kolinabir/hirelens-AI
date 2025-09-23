@@ -57,11 +57,6 @@ export const FACEBOOK_SELECTORS = {
 
 // API Endpoints
 export const API_ROUTES = {
-  scraping: {
-    start: "/api/scraping/start",
-    stop: "/api/scraping/stop",
-    status: "/api/scraping/status",
-  },
   jobs: {
     list: "/api/jobs",
     get: "/api/jobs/[id]",
@@ -83,13 +78,11 @@ export const DB_CONFIG = {
   collections: {
     jobs: "job_posts",
     groups: "facebook_groups",
-    sessions: "scraping_sessions",
     credentials: "user_credentials",
   },
   indexes: {
     jobs: ["postId", "groupId", "scrapedAt", "isProcessed"],
     groups: ["groupId", "url"],
-    sessions: ["sessionId", "status", "startTime"],
   },
 } as const;
 
@@ -98,10 +91,6 @@ export const RATE_LIMITS = {
   api: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per windowMs
-  },
-  scraping: {
-    requestDelay: 1000, // 1 second between requests
-    maxConcurrent: 1, // only 1 scraping job at a time
   },
 } as const;
 

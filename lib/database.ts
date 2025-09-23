@@ -4,7 +4,6 @@ import { DB_CONFIG } from "../config/constants";
 import type {
   JobPost,
   FacebookGroup,
-  ScrapingSession,
   UserCredentials,
   DashboardStats,
 } from "../types";
@@ -75,10 +74,6 @@ class DatabaseConnection {
     return this.getCollection<FacebookGroup>(DB_CONFIG.collections.groups);
   }
 
-  public getSessionsCollection(): Collection<ScrapingSession> {
-    return this.getCollection<ScrapingSession>(DB_CONFIG.collections.sessions);
-  }
-
   public getCredentialsCollection(): Collection<UserCredentials> {
     return this.getCollection<UserCredentials>(
       DB_CONFIG.collections.credentials
@@ -114,15 +109,6 @@ class DatabaseConnection {
         groupsCollection.createIndex({ url: 1 }, { unique: true }),
         groupsCollection.createIndex({ isActive: 1 }),
         groupsCollection.createIndex({ lastScraped: -1 }),
-      ]);
-
-      // Sessions indexes
-      const sessionsCollection = db.collection(DB_CONFIG.collections.sessions);
-      await Promise.all([
-        sessionsCollection.createIndex({ sessionId: 1 }, { unique: true }),
-        sessionsCollection.createIndex({ status: 1 }),
-        sessionsCollection.createIndex({ startTime: -1 }),
-        sessionsCollection.createIndex({ groupId: 1 }),
       ]);
 
       // Credentials indexes
@@ -232,49 +218,22 @@ export class DatabaseUtils {
     return result.deletedCount > 0;
   }
 
-  // Sessions operations
-  static async insertSession(
-    session: Omit<ScrapingSession, "_id">
-  ): Promise<string> {
-    const collection = dbConnection.getSessionsCollection();
-    const result = await collection.insertOne(session);
-    return result.insertedId.toString();
-  }
-
-  static async findActiveSessions(): Promise<ScrapingSession[]> {
-    const collection = dbConnection.getSessionsCollection();
-    return await collection.find({ status: "running" }).toArray();
-  }
-
-  static async updateSession(
-    sessionId: string,
-    update: Partial<ScrapingSession>
-  ): Promise<boolean> {
-    const collection = dbConnection.getSessionsCollection();
-    const result = await collection.updateOne({ sessionId }, { $set: update });
-    return result.modifiedCount > 0;
-  }
-
   // Dashboard stats
   static async getDashboardStats(): Promise<DashboardStats> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [totalJobs, todayJobs, activeGroups, activeSessions] =
-      await Promise.all([
-        DatabaseUtils.countJobPosts(),
-        DatabaseUtils.countJobPosts({ scrapedAt: { $gte: today } }),
-        DatabaseUtils.countJobPosts({ isActive: true }),
-        dbConnection
-          .getSessionsCollection()
-          .countDocuments({ status: "running" }),
-      ]);
+    const [totalJobs, todayJobs, activeGroups] = await Promise.all([
+      DatabaseUtils.countJobPosts(),
+      DatabaseUtils.countJobPosts({ scrapedAt: { $gte: today } }),
+      DatabaseUtils.countJobPosts({ isActive: true }),
+    ]);
 
     return {
       totalJobs,
       todayJobs,
       activeGroups,
-      activeSessions,
+      activeSessions: 0, // No longer tracking sessions
       lastUpdate: new Date(),
     };
   }
