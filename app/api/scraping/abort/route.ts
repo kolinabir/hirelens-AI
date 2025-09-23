@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { runId } = body;
 
-    apiLogger.info('Starting abort operation', { runId });
+    apiLogger.info("Starting abort operation", { runId });
 
     if (runId) {
       // Abort specific run
@@ -83,16 +83,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           data: {
-            aborted: [{ runId, status: 'aborted' }],
+            aborted: [{ runId, status: "aborted" }],
             total: 1,
           },
           message: `Aborted run ${runId}`,
         });
       } catch (error) {
         return NextResponse.json(
-          { 
-            success: false, 
-            error: error instanceof Error ? error.message : "Failed to abort specific run"
+          {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to abort specific run",
           },
           { status: 500 }
         );
@@ -100,12 +103,12 @@ export async function POST(request: NextRequest) {
     } else {
       // Abort all running processes
       const runningProcesses = await apifyService.getRunningProcesses();
-      
+
       if (runningProcesses.length === 0) {
         return NextResponse.json(
-          { 
-            success: false, 
-            error: "No running processes found" 
+          {
+            success: false,
+            error: "No running processes found",
           },
           { status: 404 }
         );
@@ -117,11 +120,11 @@ export async function POST(request: NextRequest) {
       for (const process of runningProcesses) {
         try {
           await apifyService.abortRun(process.id);
-          aborted.push({ runId: process.id, status: 'aborted' });
+          aborted.push({ runId: process.id, status: "aborted" });
         } catch (error) {
           errors.push({
             runId: process.id,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error.message : "Unknown error",
           });
         }
       }
@@ -133,16 +136,18 @@ export async function POST(request: NextRequest) {
           errors,
           total: aborted.length,
         },
-        message: `Aborted ${aborted.length} running processes${errors.length > 0 ? `, ${errors.length} failed` : ''}`,
+        message: `Aborted ${aborted.length} running processes${
+          errors.length > 0 ? `, ${errors.length} failed` : ""
+        }`,
       });
     }
-
   } catch (error) {
-    apiLogger.error('Error in abort operation', { error });
+    apiLogger.error("Error in abort operation", { error });
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Failed to abort processes" 
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to abort processes",
       },
       { status: 500 }
     );
@@ -205,11 +210,11 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    apiLogger.info('Getting running processes status');
+    apiLogger.info("Getting running processes status");
 
     const [runningProcesses, recentRuns] = await Promise.all([
       apifyService.getRunningProcesses(),
-      apifyService.getRecentRuns(5)
+      apifyService.getRecentRuns(5),
     ]);
 
     return NextResponse.json({
@@ -217,7 +222,7 @@ export async function GET() {
       data: {
         running: runningProcesses,
         total: runningProcesses.length,
-        recentRuns: recentRuns.map(run => ({
+        recentRuns: recentRuns.map((run) => ({
           id: run.id,
           status: run.status,
           startedAt: run.startedAt,
@@ -226,13 +231,12 @@ export async function GET() {
         })),
       },
     });
-
   } catch (error) {
-    apiLogger.error('Error getting running processes', { error });
+    apiLogger.error("Error getting running processes", { error });
     return NextResponse.json(
-      { 
-        success: false, 
-        error: "Failed to get running processes" 
+      {
+        success: false,
+        error: "Failed to get running processes",
       },
       { status: 500 }
     );

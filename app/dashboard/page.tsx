@@ -1,35 +1,63 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import type { DashboardStats } from "@/types";
+import type { DashboardStats, FacebookGroup, JobPost } from "@/types";
+
+// Components
+import GroupsManager from "@/components/GroupsManager";
+import JobPostsList from "@/components/JobPostsList";
+import ScraperStatus from "@/components/ScraperStatus";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [groups, setGroups] = useState<FacebookGroup[]>([]);
+  const [jobs, setJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "groups" | "jobs" | "scraper">("overview");
 
   useEffect(() => {
-    fetchStats();
+    fetchDashboardData();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/dashboard/stats");
-      const result = await response.json();
+      
+      // Fetch all data in parallel
+      const [statsRes, groupsRes, jobsRes] = await Promise.all([
+        fetch("/api/dashboard/stats"),
+        fetch("/api/groups"),
+        fetch("/api/jobs?limit=50")
+      ]);
 
-      if (result.success) {
-        setStats(result.data);
-      } else {
-        setError(result.error || "Failed to fetch stats");
+      const [statsResult, groupsResult, jobsResult] = await Promise.all([
+        statsRes.json(),
+        groupsRes.json(),
+        jobsRes.json()
+      ]);
+
+      if (statsResult.success) {
+        setStats(statsResult.data);
+      }
+      
+      if (groupsResult.success) {
+        setGroups(groupsResult.data);
+      }
+      
+      if (jobsResult.data) {
+        setJobs(jobsResult.data);
       }
     } catch (err) {
-      setError("Failed to fetch dashboard stats");
-      console.error("Dashboard stats error:", err);
+      setError("Failed to fetch dashboard data");
+      console.error("Dashboard error:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGroupsUpdate = () => {
+    fetchDashboardData();
   };
 
   if (loading) {
@@ -60,7 +88,7 @@ export default function Dashboard() {
             <h2 className="text-lg font-semibold text-red-800 mb-2">Error</h2>
             <p className="text-red-600">{error}</p>
             <button
-              onClick={fetchStats}
+              onClick={fetchDashboardData}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
             >
               Try Again
@@ -74,190 +102,224 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Facebook Job Scraper Dashboard
-              </h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Monitor and manage your job scraping operations
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900">Job Scraper Dashboard</h1>
+              <p className="text-gray-600">Manage your Facebook group scraping operations</p>
             </div>
-            <div className="flex space-x-4">
-              <Link
-                href="/dashboard/jobs"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            <div className="flex gap-2">
+              <button
+                onClick={fetchDashboardData}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
-                View Jobs
-              </Link>
-              <Link
-                href="/dashboard/groups"
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Manage Groups
-              </Link>
+                Refresh
+              </button>
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatsCard
-            title="Total Jobs"
-            value={stats?.totalJobs || 0}
-            icon="📋"
-            color="blue"
-          />
-          <StatsCard
-            title="Today's Jobs"
-            value={stats?.todayJobs || 0}
-            icon="📈"
-            color="green"
-          />
-          <StatsCard
-            title="Active Groups"
-            value={stats?.activeGroups || 0}
-            icon="👥"
-            color="purple"
-          />
-          <StatsCard
-            title="Active Sessions"
-            value={stats?.activeSessions || 0}
-            icon="⚡"
-            color="orange"
-          />
+      {/* Navigation Tabs */}
+      <div className="max-w-7xl mx-auto px-8 py-6">
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex space-x-8">
+            {[
+              { id: "overview", label: "Overview", icon: "📊" },
+              { id: "groups", label: "Groups", icon: "👥" },
+              { id: "jobs", label: "Job Posts", icon: "💼" },
+              { id: "scraper", label: "Scraper", icon: "🤖" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex items-center gap-2 ${
+                  activeTab === tab.id
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <span>{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link
-              href="/dashboard/jobs"
-              className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
-            >
-              <div className="flex items-center">
-                <span className="text-2xl mr-3">📋</span>
-                <div>
-                  <h3 className="font-medium text-gray-900">View All Jobs</h3>
-                  <p className="text-sm text-gray-500">
-                    Browse scraped job posts
-                  </p>
+        {/* Tab Content */}
+        {activeTab === "overview" && (
+          <div className="space-y-6">
+            {/* Stats Overview */}
+            {stats && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Total Jobs</h3>
+                      <p className="text-3xl font-bold text-blue-600">{stats.totalJobs}</p>
+                    </div>
+                    <div className="text-4xl">💼</div>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Active Groups</h3>
+                      <p className="text-3xl font-bold text-green-600">{stats.activeGroups}</p>
+                    </div>
+                    <div className="text-4xl">👥</div>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Jobs Today</h3>
+                      <p className="text-3xl font-bold text-purple-600">{stats.totalJobs}</p>
+                    </div>
+                    <div className="text-4xl">📅</div>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">This Week</h3>
+                      <p className="text-3xl font-bold text-orange-600">{stats.totalJobs}</p>
+                    </div>
+                    <div className="text-4xl">📈</div>
+                  </div>
                 </div>
               </div>
-            </Link>
+            )}
 
-            <Link
-              href="/dashboard/groups"
-              className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
-            >
-              <div className="flex items-center">
-                <span className="text-2xl mr-3">👥</span>
-                <div>
-                  <h3 className="font-medium text-gray-900">Manage Groups</h3>
-                  <p className="text-sm text-gray-500">
-                    Add or remove Facebook groups
-                  </p>
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/scraping"
-              className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors"
-            >
-              <div className="flex items-center">
-                <span className="text-2xl mr-3">🔄</span>
-                <div>
-                  <h3 className="font-medium text-gray-900">Start Scraping</h3>
-                  <p className="text-sm text-gray-500">
-                    Begin a new scraping session
-                  </p>
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">
-              System Status
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Last Update</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {stats?.lastUpdate
-                    ? new Date(stats.lastUpdate).toLocaleString()
-                    : "Never"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Database Status</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Connected
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Scraping Status</span>
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    stats?.activeSessions && stats.activeSessions > 0
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
+            {/* Quick Actions */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button
+                  onClick={() => setActiveTab("scraper")}
+                  className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
                 >
-                  {stats?.activeSessions && stats.activeSessions > 0
-                    ? "Running"
-                    : "Idle"}
-                </span>
+                  <div className="text-2xl mb-2">🚀</div>
+                  <div className="font-medium">Start Scraping</div>
+                  <div className="text-sm text-gray-600">Run manual scrape</div>
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab("groups")}
+                  className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
+                >
+                  <div className="text-2xl mb-2">➕</div>
+                  <div className="font-medium">Add Groups</div>
+                  <div className="text-sm text-gray-600">Manage Facebook groups</div>
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab("jobs")}
+                  className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
+                >
+                  <div className="text-2xl mb-2">👀</div>
+                  <div className="font-medium">View Jobs</div>
+                  <div className="text-sm text-gray-600">Browse job posts</div>
+                </button>
+              </div>
+            </div>
+            
+            {/* Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Recent Groups</h3>
+                {groups.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No groups added yet</p>
+                ) : (
+                  groups.slice(0, 5).map((group) => (
+                    <div key={group._id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                      <div>
+                        <div className="font-medium">{group.name}</div>
+                        <div className="text-sm text-gray-600">{group.totalPostsScraped} posts</div>
+                      </div>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          group.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {group.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Recent Jobs</h3>
+                {jobs.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No jobs found yet</p>
+                ) : (
+                  jobs.slice(0, 5).map((job) => (
+                    <div key={job._id} className="py-2 border-b last:border-b-0">
+                      <div className="font-medium truncate">
+                        {job.jobDetails.title || "Untitled Job"}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {job.author.name} • {new Date(job.postedDate).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* System Status */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">System Status</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Last Update</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {stats?.lastUpdate
+                      ? new Date(stats.lastUpdate).toLocaleString()
+                      : "Never"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Database Status</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Connected
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Scraping Status</span>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      stats?.activeSessions && stats.activeSessions > 0
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {stats?.activeSessions && stats.activeSessions > 0
+                      ? "Running"
+                      : "Idle"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
-  );
-}
+        )}
 
-interface StatsCardProps {
-  title: string;
-  value: number;
-  icon: string;
-  color: "blue" | "green" | "purple" | "orange";
-}
+        {activeTab === "groups" && (
+          <GroupsManager groups={groups} onUpdate={handleGroupsUpdate} />
+        )}
 
-function StatsCard({ title, value, icon, color }: StatsCardProps) {
-  const colorClasses = {
-    blue: "bg-blue-50 text-blue-600",
-    green: "bg-green-50 text-green-600",
-    purple: "bg-purple-50 text-purple-600",
-    orange: "bg-orange-50 text-orange-600",
-  };
+        {activeTab === "jobs" && (
+          <JobPostsList jobs={jobs} />
+        )}
 
-  return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center">
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-          <span className="text-xl">{icon}</span>
-        </div>
-        <div className="ml-4">
-          <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-          <p className="text-2xl font-bold text-gray-900">
-            {value.toLocaleString()}
-          </p>
-        </div>
+        {activeTab === "scraper" && (
+          <ScraperStatus onUpdate={handleGroupsUpdate} />
+        )}
       </div>
     </div>
   );
