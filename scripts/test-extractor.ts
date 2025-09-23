@@ -122,7 +122,7 @@ function testExtractor() {
     console.log(`- Non-job posts filtered: ${JSON.parse(input).length - result.length}`);
     
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error:', error instanceof Error ? error.message : 'Unknown error');
   }
 }
 

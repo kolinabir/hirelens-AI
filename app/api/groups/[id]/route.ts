@@ -48,12 +48,12 @@ import type { FacebookGroup } from "@/types";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnection.connect();
 
-    const groupId = params.id;
+    const { id: groupId } = await params;
     const body = await request.json();
 
     // Find existing group
@@ -117,12 +117,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnection.connect();
 
-    const groupId = params.id;
+    const { id: groupId } = await params;
 
     // Check if group exists
     const existingGroups = await DatabaseUtils.findGroups({ _id: groupId });
@@ -176,12 +176,12 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnection.connect();
 
-    const groupId = params.id;
+    const { id: groupId } = await params;
     const groups = await DatabaseUtils.findGroups({ _id: groupId });
 
     if (groups.length === 0) {
