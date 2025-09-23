@@ -26,10 +26,33 @@ export interface JobPost {
     requirements?: string[];
     contactInfo?: string;
   };
+  // Apify-specific fields for rich data
+  apifyData?: {
+    facebookUrl: string;
+    user: {
+      id: string;
+      name: string;
+    };
+    likesCount: number;
+    commentsCount: number;
+    attachments?: Array<{
+      thumbnail?: string;
+      __typename: string;
+      photo_image?: {
+        uri: string;
+        height: number;
+        width: number;
+      };
+      url?: string;
+      id?: string;
+      ocrText?: string;
+    }>;
+  };
   scrapedAt: Date;
   isProcessed: boolean;
   isDuplicate: boolean;
   tags: string[];
+  source: 'apify' | 'puppeteer' | 'manual'; // Track the scraping source
 }
 
 export interface FacebookGroup {

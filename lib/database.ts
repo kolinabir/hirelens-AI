@@ -7,6 +7,8 @@ import type {
   UserCredentials,
   DashboardStats,
 } from "../types";
+import type { ApifyPost } from "./apify-service";
+import crypto from "crypto";
 
 class DatabaseConnection {
   private static instance: DatabaseConnection;
@@ -187,6 +189,81 @@ export class DatabaseUtils {
     const collection = dbConnection.getJobsCollection();
     const result = await collection.deleteOne({ postId });
     return result.deletedCount > 0;
+  }
+
+  // Apify-specific operations
+  static async saveApifyPosts(
+    apifyPosts: ApifyPost[],
+    groupId: string,
+    groupName: string
+  ): Promise<{ saved: number; duplicates: number }> {
+    let saved = 0;
+    let duplicates = 0;
+
+    for (const apifyPost of apifyPosts) {
+      // Generate a unique post ID from the content and user
+      const postId = crypto
+        .createHash("md5")
+        .update(`${apifyPost.facebookUrl}_${apifyPost.user.id}_${apifyPost.text}`)
+        .digest("hex");
+
+      // Check if this post already exists
+      const existingPost = await DatabaseUtils.findJobPosts({ postId }, 1);
+      if (existingPost.length > 0) {
+        duplicates++;
+        continue;
+      }
+
+      // Convert Apify post to our JobPost format
+      const jobPost: Omit<JobPost, "_id"> = {
+        postId,
+        groupId,
+        groupName,
+        content: apifyPost.text,
+        author: {
+          name: apifyPost.user.name,
+          profileUrl: `https://facebook.com/${apifyPost.user.id}`,
+        },
+        postedDate: new Date(), // Apify doesn't provide exact post date
+        engagementMetrics: {
+          likes: apifyPost.likesCount,
+          comments: apifyPost.commentsCount,
+          shares: 0, // Not provided by Apify
+        },
+        jobDetails: {
+          // These will be parsed later by LLM or regex
+          title: "",
+          company: "",
+          location: "",
+          salary: "",
+          description: apifyPost.text,
+        },
+        apifyData: {
+          facebookUrl: apifyPost.facebookUrl,
+          user: apifyPost.user,
+          likesCount: apifyPost.likesCount,
+          commentsCount: apifyPost.commentsCount,
+          attachments: apifyPost.attachments?.map(att => ({
+            thumbnail: att.thumbnail,
+            __typename: att.__typename,
+            photo_image: att.photo_image,
+            url: att.url,
+            id: att.id,
+            ocrText: att.ocrText,
+          })),
+        },
+        scrapedAt: new Date(),
+        isProcessed: false,
+        isDuplicate: false,
+        tags: [],
+        source: 'apify',
+      };
+
+      await DatabaseUtils.insertJobPost(jobPost);
+      saved++;
+    }
+
+    return { saved, duplicates };
   }
 
   // Groups operations
