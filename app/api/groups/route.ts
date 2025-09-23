@@ -51,8 +51,11 @@ export async function POST(request: NextRequest) {
       try {
         // Basic URL validation
         const urlObj = new URL(url);
-        if (urlObj.hostname === 'facebook.com' || urlObj.hostname === 'www.facebook.com') {
-          if (url.includes('/groups/')) {
+        if (
+          urlObj.hostname === "facebook.com" ||
+          urlObj.hostname === "www.facebook.com"
+        ) {
+          if (url.includes("/groups/")) {
             valid.push(url);
           } else {
             invalid.push(url);
