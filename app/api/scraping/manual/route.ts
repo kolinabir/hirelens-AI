@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
       maxPosts = 50,
       scrapeComments = false,
       scrapePhotos = true,
+      timeout = 60,
     } = body;
 
     // Validation
@@ -192,11 +193,15 @@ export async function POST(request: NextRequest) {
     };
 
     // Scrape with Apify (async run with 60s timeout and abort)
-    apiLogger.info("Starting async Apify run with 60s timeout", {
-      groupUrls: validUrls,
-    });
+    const clientTimeoutSec = Math.max(10, Math.min(Number(timeout) || 60, 300));
+    apiLogger.info(
+      `Starting async Apify run with ${clientTimeoutSec}s timeout`,
+      {
+        groupUrls: validUrls,
+      }
+    );
     const { runId } = await apifyService.startScraping(config);
-    const maxDurationMs = 60_000;
+    const maxDurationMs = clientTimeoutSec * 1000;
     const pollIntervalMs = 3_000;
     const t0 = Date.now();
     let lastStatus = "RUNNING";
@@ -247,6 +252,9 @@ export async function POST(request: NextRequest) {
     const groupResults = [];
     let totalSaved = 0;
     let totalDuplicates = 0;
+
+    // Collect detailed progress logs for frontend Activity Logs
+    const progressLogs: string[] = [];
 
     for (const groupUrl of validUrls) {
       // Filter posts for this specific group
@@ -321,20 +329,20 @@ export async function POST(request: NextRequest) {
     // Step 2: Process each post individually through external AI job filtering
     if (Array.isArray(posts) && posts.length > 0) {
       try {
-        console.log(
-          `🔄 Processing ${posts.length} scraped posts individually through external AI job filtering...`
-        );
+        const headerLog = `🔄 Processing ${posts.length} scraped posts individually through external AI job filtering...`;
+        console.log(headerLog);
+        progressLogs.push(headerLog);
 
         const allStructuredJobs = [];
 
         // Process each post individually
         for (let i = 0; i < posts.length; i++) {
           const post = posts[i];
-          console.log(
-            `🔄 Processing post ${i + 1}/${posts.length} by ${
-              post.author?.name || "Unknown"
-            }`
-          );
+          const processingLog = `🔄 Processing post ${i + 1}/${
+            posts.length
+          } by ${post.author?.name || "Unknown"}`;
+          console.log(processingLog);
+          progressLogs.push(processingLog);
 
           // Convert single post to string format for external API
           const singlePostJson = JSON.stringify([post]);
@@ -345,7 +353,14 @@ export async function POST(request: NextRequest) {
               singlePostJson
             );
 
+          progressLogs.push(
+            "🔄 Sending job posts to external API for filtering..."
+          );
+
           if (externalFilterResult.success && externalFilterResult.data) {
+            progressLogs.push(
+              "✅ Successfully received structured job posts from external API"
+            );
             // Parse structured job posts from this individual post
             const structuredJobs =
               ExternalJobFilterService.parseExternalResponse(
@@ -353,19 +368,26 @@ export async function POST(request: NextRequest) {
               );
 
             if (structuredJobs.length > 0) {
-              console.log(
-                `✅ Found ${
-                  structuredJobs.length
-                } structured job(s) from post ${i + 1}`
-              );
+              const foundLog = `✅ Found ${
+                structuredJobs.length
+              } structured job(s) from post ${i + 1}`;
+              console.log(foundLog);
+              progressLogs.push(foundLog);
               allStructuredJobs.push(...structuredJobs);
             } else {
-              console.log(`ℹ️ No job data found in post ${i + 1}`);
+              const infoLog = `ℹ️ No job data found in post ${i + 1}`;
+              console.log(infoLog);
+              progressLogs.push(infoLog);
             }
           } else {
             console.warn(
               `⚠️ External AI processing failed for post ${i + 1}:`,
               externalFilterResult.error
+            );
+            progressLogs.push(
+              `⚠️ External AI processing failed for post ${i + 1}: ${
+                externalFilterResult.error ?? "Unknown error"
+              }`
             );
           }
 
@@ -375,9 +397,9 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        console.log(
-          `🎯 Total structured jobs found: ${allStructuredJobs.length}`
-        );
+        const totalFoundLog = `🎯 Total structured jobs found: ${allStructuredJobs.length}`;
+        console.log(totalFoundLog);
+        progressLogs.push(totalFoundLog);
 
         if (allStructuredJobs.length > 0) {
           await dbConnection.connect();
@@ -475,6 +497,9 @@ export async function POST(request: NextRequest) {
                     postId: jobData.postId,
                   }
                 );
+                progressLogs.push(
+                  "❌ Skipping job with invalid postUrl or postId"
+                );
                 continue;
               }
 
@@ -490,9 +515,9 @@ export async function POST(request: NextRequest) {
               } catch (duplicateError: any) {
                 // Handle duplicate key errors by skipping and continuing
                 if (duplicateError.code === 11000) {
-                  console.warn(
-                    `⚠️ Skipping duplicate job with postUrl: ${finalPostUrl}`
-                  );
+                  const dupLog = `⚠️ Skipping duplicate job with postUrl: ${finalPostUrl}`;
+                  console.warn(dupLog);
+                  progressLogs.push(dupLog);
                   continue;
                 } else {
                   // Re-throw non-duplicate errors
@@ -524,17 +549,22 @@ export async function POST(request: NextRequest) {
             structuredJobsFound: allStructuredJobs.length,
             savedJobs: savedJobs.length,
             processingMethod: "external_ai",
+            details: `Processed ${posts.length} posts via external AI`,
+            message: `Saved ${savedJobs.length} structured job(s)`,
           };
 
-          console.log(
-            `✅ Successfully processed ${savedJobs.length} structured jobs from external AI`
-          );
+          const doneLog = `✅ Successfully processed ${savedJobs.length} structured jobs from external AI`;
+          console.log(doneLog);
+          progressLogs.push(doneLog);
         } else {
           responseData.jobExtraction = {
             success: true,
             structuredJobsFound: 0,
             message: "No job posts identified by external AI",
           };
+          progressLogs.push(
+            "ℹ️ No structured job posts identified by external AI"
+          );
         }
       } catch (jobProcessingError) {
         console.error("❌ Error during job processing:", jobProcessingError);
@@ -546,6 +576,13 @@ export async function POST(request: NextRequest) {
               ? jobProcessingError.message
               : "Unknown error",
         };
+        progressLogs.push(
+          `❌ Error during job processing: ${
+            jobProcessingError instanceof Error
+              ? jobProcessingError.message
+              : "Unknown error"
+          }`
+        );
       }
     }
 
@@ -553,7 +590,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: responseData,
+      data: { ...responseData, progressLogs },
       message: `Successfully scraped ${posts.length} posts from ${validUrls.length} group(s). Saved ${totalSaved} new posts, ${totalDuplicates} duplicates found.`,
     });
   } catch (error) {

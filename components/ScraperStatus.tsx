@@ -110,6 +110,11 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
                 0
               } jobs`,
         ]);
+        // Append detailed progress logs if provided by the API
+        const providedLogs: string[] = result?.data?.progressLogs;
+        if (Array.isArray(providedLogs) && providedLogs.length > 0) {
+          setLogs((prev) => [...prev, ...providedLogs]);
+        }
         onUpdate();
         fetchStatus();
       } else {
