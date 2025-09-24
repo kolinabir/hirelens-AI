@@ -96,18 +96,18 @@ export async function sendJobDigestEmail(
         </div>
         <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin: 0;">AI-Powered Job Discovery Platform</p>
       </div>
-      
+
       <!-- Content -->
       <div style="padding: 30px;">
         <h2 style="color: #1e293b; font-size: 24px; margin-bottom: 16px; font-weight: 700;">🎯 Your Latest Job Opportunities</h2>
         <p style="color: #64748b; margin-bottom: 30px; font-size: 16px; line-height: 1.6;">
           We've found ${jobs.length} exciting new job opportunities that match your profile. Each opportunity has been carefully analyzed by our AI to ensure quality and relevance.
         </p>
-        
+
         <ul style="list-style: none; padding: 0; margin: 0;">
           ${htmlItems}
         </ul>
-        
+
         <!-- Call to Action -->
         <div style="text-align: center; margin: 40px 0;">
           <a href="${baseUrl}/dashboard" style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: inline-block; transition: all 0.3s ease;">
@@ -115,7 +115,7 @@ export async function sendJobDigestEmail(
           </a>
         </div>
       </div>
-      
+
       <!-- Footer -->
       <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px; border-top: 1px solid #e2e8f0;">
         <div style="text-align: center; margin-bottom: 20px;">
@@ -131,7 +131,7 @@ export async function sendJobDigestEmail(
             You're receiving this because you subscribed to HireLens job updates.
           </p>
         </div>
-        
+
         <div style="text-align: center; padding-top: 20px; border-top: 1px solid #e2e8f0;">
           <p style="color: #94a3b8; font-size: 12px; margin: 0;">
             © 2024 HireLens. All rights reserved. Built with ❤️ for job seekers.
@@ -145,18 +145,22 @@ export async function sendJobDigestEmail(
 
 Hi there!
 
-We've found ${jobs.length} exciting new job opportunities that match your profile. Each opportunity has been carefully analyzed by our AI to ensure quality and relevance.
+We've found ${
+    jobs.length
+  } exciting new job opportunities that match your profile. Each opportunity has been carefully analyzed by our AI to ensure quality and relevance.
 
 ${jobs
-    .map(
-      (j, idx) =>
-        `${idx + 1}. ${j.title || "Untitled Role"}${
-          j.company ? ` at ${j.company}` : ""
-        }${j.location ? ` — ${j.location}` : ""}${j.deadline ? ` | Deadline: ${j.deadline}` : ""}
+  .map(
+    (j, idx) =>
+      `${idx + 1}. ${j.title || "Untitled Role"}${
+        j.company ? ` at ${j.company}` : ""
+      }${j.location ? ` — ${j.location}` : ""}${
+        j.deadline ? ` | Deadline: ${j.deadline}` : ""
+      }
 Apply: ${j.url || "N/A"}
 Preview: ${baseUrl}/dashboard/jobs?search=${encodeURIComponent(j.title || "")}`
-    )
-    .join("\n\n")}
+  )
+  .join("\n\n")}
 
 🚀 Explore all jobs on HireLens: ${baseUrl}/dashboard
 
