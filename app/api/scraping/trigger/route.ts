@@ -3,6 +3,7 @@ import { apifyService } from "@/lib/apify-service";
 import { DatabaseUtils } from "@/lib/database";
 import { apiLogger } from "@/lib/logger";
 import { ExternalJobFilterService } from "@/lib/external-job-filter";
+import { JobPostExtractor } from "@/lib/job-extractor";
 import dbConnection from "@/lib/database";
 
 interface AutoScrapingResponseData {
@@ -348,11 +349,75 @@ export async function POST(request: NextRequest) {
           }
         } else {
           apiLogger.warn("External AI job filtering failed:", externalFilterResult.error);
-          responseData.jobExtraction = {
-            success: false,
-            error: externalFilterResult.error,
-            fallback: "External AI unavailable - posts saved without job structuring",
-          };
+          
+          // Fallback: Use local job extractor
+          try {
+            apiLogger.info("Attempting fallback job extraction using local extractor...");
+            
+            const localExtractedJobs = JobPostExtractor.extractJobPosts(postsJson);
+            
+            if (localExtractedJobs.length > 0) {
+              await dbConnection.connect();
+              const db = dbConnection.getDb();
+              
+              const fallbackSavedJobs = [];
+              for (const job of localExtractedJobs) {
+                try {
+                  const derivedPostUrl = job.facebookUrl || `fallback_${Date.now()}_${Math.random()}`;
+                  
+                  const jobData = {
+                    ...job,
+                    postUrl: derivedPostUrl,
+                    source: "facebook_auto_scraping_local_fallback",
+                    extractedAt: new Date(),
+                    processingVersion: "local_extractor_v1",
+                    originalPostsCount: posts.length,
+                    scrapingType: "automatic_fallback",
+                  };
+
+                  const result = await db.collection("jobs").updateOne(
+                    { postUrl: derivedPostUrl },
+                    { $set: jobData },
+                    { upsert: true }
+                  );
+
+                  fallbackSavedJobs.push({
+                    ...jobData,
+                    _id: result.upsertedId ?? undefined,
+                    _op: result.upsertedId ? "upserted" : result.modifiedCount > 0 ? "updated" : "unchanged",
+                  });
+                } catch (dbError) {
+                  apiLogger.error("Error saving fallback job to database:", dbError);
+                }
+              }
+              
+              responseData.jobExtraction = {
+                success: true,
+                structuredJobsFound: localExtractedJobs.length,
+                savedJobs: fallbackSavedJobs.length,
+                processingMethod: "local_fallback",
+                fallback: `External AI failed, used local extractor - processed ${fallbackSavedJobs.length} jobs`,
+              };
+              
+              apiLogger.info(
+                `Fallback successful: processed ${fallbackSavedJobs.length} jobs using local extractor`
+              );
+            } else {
+              responseData.jobExtraction = {
+                success: false,
+                error: externalFilterResult.error,
+                fallback: "External AI unavailable and local extractor found no jobs",
+              };
+            }
+          } catch (fallbackError) {
+            apiLogger.error("Fallback job extraction also failed:", fallbackError);
+            responseData.jobExtraction = {
+              success: false,
+              error: externalFilterResult.error,
+              fallback: "Both external AI and local extractor failed",
+              details: fallbackError instanceof Error ? fallbackError.message : "Unknown fallback error",
+            };
+          }
         }
       } catch (jobProcessingError) {
         apiLogger.error("Error during job processing:", jobProcessingError);

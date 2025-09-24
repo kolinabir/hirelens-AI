@@ -14,7 +14,10 @@ interface FacebookPost {
   };
   likesCount?: number;
   commentsCount?: number;
-  attachments?: unknown[];
+  attachments?: Array<{
+    ocrText?: string;
+    [key: string]: unknown;
+  }>;
 }
 
 interface JobPostExtractionResult {
@@ -149,7 +152,20 @@ export class JobPostExtractor {
   private static extractSingleJobPost(
     post: FacebookPost
   ): JobPostExtractionResult | null {
-    const text = post.text || post.content || "";
+    // Combine text content with OCR text from attachments
+    let text = post.text || post.content || "";
+    
+    // Extract OCR text from attachments if available
+    if (post.attachments && Array.isArray(post.attachments)) {
+      const ocrTexts = post.attachments
+        .map(attachment => attachment.ocrText)
+        .filter(ocrText => ocrText && typeof ocrText === 'string')
+        .join(' ');
+      
+      if (ocrTexts) {
+        text = text ? `${text} ${ocrTexts}` : ocrTexts;
+      }
+    }
 
     return {
       // Basic post information
