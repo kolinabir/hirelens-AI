@@ -102,7 +102,11 @@ export default function ManualProcessingPage() {
   const deleteCurrentJob = async () => {
     if (!currentJob) return;
 
-    if (!confirm("Are you sure you want to delete this job? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this job? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
@@ -119,7 +123,7 @@ export default function ManualProcessingPage() {
       if (data.success) {
         setMessage("✅ Job deleted successfully!");
         setDeletedCount((prev) => prev + 1);
-        
+
         // Auto-load next job after 1 second
         setTimeout(() => {
           fetchNextJob();
@@ -288,7 +292,9 @@ export default function ManualProcessingPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Deleted</p>
-                <p className="text-2xl font-bold text-gray-900">{deletedCount}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {deletedCount}
+                </p>
               </div>
             </div>
           </div>
