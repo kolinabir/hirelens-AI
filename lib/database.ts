@@ -88,40 +88,79 @@ class DatabaseConnection {
 
       // Job posts indexes
       const jobsCollection = db.collection(DB_CONFIG.collections.jobs);
-      await Promise.all([
-        jobsCollection.createIndex({ postId: 1 }, { unique: true }),
-        jobsCollection.createIndex({ groupId: 1 }),
-        jobsCollection.createIndex({ scrapedAt: -1 }),
-        jobsCollection.createIndex({ isProcessed: 1 }),
-        jobsCollection.createIndex({ isDuplicate: 1 }),
-        jobsCollection.createIndex({ "jobDetails.type": 1 }),
-        jobsCollection.createIndex({ "jobDetails.location": 1 }),
-        jobsCollection.createIndex({ tags: 1 }),
-        jobsCollection.createIndex({
-          content: "text",
-          "jobDetails.title": "text",
-          "jobDetails.description": "text",
-        }),
-      ]);
+
+      // Create indexes with error handling for existing indexes
+      const indexOperations = [
+        { spec: { postId: 1 }, options: {} },
+        { spec: { groupId: 1 }, options: {} },
+        { spec: { scrapedAt: -1 }, options: {} },
+        { spec: { postUrl: 1 }, options: { unique: true, sparse: true } },
+        { spec: { isProcessed: 1 }, options: {} },
+        { spec: { isDuplicate: 1 }, options: {} },
+        { spec: { "jobDetails.type": 1 }, options: {} },
+        { spec: { "jobDetails.location": 1 }, options: {} },
+        { spec: { tags: 1 }, options: {} },
+        {
+          spec: {
+            content: "text",
+            "jobDetails.title": "text",
+            "jobDetails.description": "text",
+          },
+          options: {},
+        },
+      ];
+
+      for (const { spec, options } of indexOperations) {
+        try {
+          await jobsCollection.createIndex(spec, options);
+        } catch (error: any) {
+          // Ignore index conflicts (index already exists)
+          if (error.code !== 86 && error.code !== 85) {
+            throw error;
+          }
+        }
+      }
 
       // Groups indexes
       const groupsCollection = db.collection(DB_CONFIG.collections.groups);
-      await Promise.all([
-        groupsCollection.createIndex({ groupId: 1 }, { unique: true }),
-        groupsCollection.createIndex({ url: 1 }, { unique: true }),
-        groupsCollection.createIndex({ isActive: 1 }),
-        groupsCollection.createIndex({ lastScraped: -1 }),
-      ]);
+      const groupIndexOperations = [
+        { spec: { groupId: 1 }, options: { unique: true } },
+        { spec: { url: 1 }, options: { unique: true } },
+        { spec: { isActive: 1 }, options: {} },
+        { spec: { lastScraped: -1 }, options: {} },
+      ];
+
+      for (const { spec, options } of groupIndexOperations) {
+        try {
+          await groupsCollection.createIndex(spec, options);
+        } catch (error: any) {
+          // Ignore index conflicts (index already exists)
+          if (error.code !== 86 && error.code !== 85) {
+            throw error;
+          }
+        }
+      }
 
       // Credentials indexes
       const credentialsCollection = db.collection(
         DB_CONFIG.collections.credentials
       );
-      await Promise.all([
-        credentialsCollection.createIndex({ email: 1 }, { unique: true }),
-        credentialsCollection.createIndex({ isActive: 1 }),
-        credentialsCollection.createIndex({ isBlocked: 1 }),
-      ]);
+      const credentialIndexOperations = [
+        { spec: { email: 1 }, options: { unique: true } },
+        { spec: { isActive: 1 }, options: {} },
+        { spec: { isBlocked: 1 }, options: {} },
+      ];
+
+      for (const { spec, options } of credentialIndexOperations) {
+        try {
+          await credentialsCollection.createIndex(spec, options);
+        } catch (error: any) {
+          // Ignore index conflicts (index already exists)
+          if (error.code !== 86 && error.code !== 85) {
+            throw error;
+          }
+        }
+      }
 
       console.log("✅ Database indexes created successfully");
     } catch (error) {
