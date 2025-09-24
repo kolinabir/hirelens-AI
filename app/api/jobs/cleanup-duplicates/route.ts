@@ -2,6 +2,81 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnection from "@/lib/database";
 import { apiLogger } from "@/lib/logger";
 
+/**
+ * @swagger
+ * /api/jobs/cleanup-duplicates:
+ *   post:
+ *     summary: Clean up duplicate job posts
+ *     description: Remove duplicate job posts from the database, keeping only the most recent version of each duplicate group based on postId. This helps maintain data quality and prevents React key conflicts.
+ *     tags: [Jobs]
+ *     requestBody:
+ *       description: No request body required
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Cleanup completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     duplicateGroupsFound:
+ *                       type: number
+ *                       description: Number of duplicate groups found
+ *                       example: 4
+ *                     totalJobsDeleted:
+ *                       type: number
+ *                       description: Total number of duplicate jobs removed
+ *                       example: 5
+ *                     results:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           postId:
+ *                             type: string
+ *                             description: Facebook post ID
+ *                           jobsFound:
+ *                             type: number
+ *                             description: Number of duplicates found for this post
+ *                           jobsDeleted:
+ *                             type: number
+ *                             description: Number of duplicates removed
+ *                           keptJob:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 description: MongoDB ID of the kept job
+ *                               title:
+ *                                 type: string
+ *                                 description: Job title
+ *                               scrapedAt:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 description: When the job was scraped
+ *                           action:
+ *                             type: string
+ *                             example: "cleaned_up"
+ *                 message:
+ *                   type: string
+ *                   example: "Cleanup completed: 5 duplicate jobs deleted"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 // POST - Clean up duplicate job posts, keeping only the most recent one per postId
 export async function POST(_request: NextRequest) {
   try {
