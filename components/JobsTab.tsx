@@ -699,67 +699,82 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
             return (
               <div
                 key={job.postId}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 overflow-hidden group"
+                className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-xl hover:border-blue-200 transition-all duration-300 overflow-hidden group"
               >
-                {/* Author Header */}
-                <div className="p-6 pb-4">
+                {/* Header with Author Info and Job Type */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-4">
                       <a
                         href={getProfileUrl(job)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-shrink-0"
+                        className="flex-shrink-0 group/avatar"
                       >
                         <img
                           src={getProfileImageUrl(job)}
                           alt={authorName}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 hover:border-blue-300 transition-colors"
+                          className="w-14 h-14 rounded-full object-cover border-3 border-white shadow-md group-hover/avatar:shadow-lg transition-all"
                         />
                       </a>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 mb-1">
                           <a
                             href={getProfileUrl(job)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                            className="font-bold text-gray-900 hover:text-blue-700 transition-colors text-lg"
                           >
                             {authorName}
                           </a>
                           <span className="text-gray-400">•</span>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-600 font-medium">
                             {formatRelativeTime(job.postedDate)}
                           </span>
                         </div>
-                        <div className="flex items-center space-x-2 mt-1">
-                          {/* <span className="text-sm text-gray-500">
-                            📍 {job.groupName}
-                          </span> */}
+                        <div className="flex items-center space-x-3">
+                          <span className="text-sm text-gray-600 bg-white/70 px-2 py-1 rounded-md">
+                            📍 {"Facebook Group"}
+                          </span>
                           <a
                             href={getPostUrl(job)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                            className="inline-flex items-center space-x-1 text-sm text-blue-700 hover:text-blue-900 font-semibold bg-blue-100/50 hover:bg-blue-200/70 px-3 py-1 rounded-lg transition-all"
                           >
-                            View Post →
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                              />
+                            </svg>
+                            <span>View Post</span>
                           </a>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col items-end space-y-2">
                       {employmentType && (
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          className={`px-4 py-2 rounded-xl text-sm font-bold shadow-sm ${
                             employmentType.toLowerCase() === "full-time"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                               : employmentType.toLowerCase() === "part-time"
-                              ? "bg-blue-100 text-blue-800"
+                              ? "bg-blue-100 text-blue-800 border border-blue-200"
                               : employmentType.toLowerCase() === "contract"
-                              ? "bg-purple-100 text-purple-800"
+                              ? "bg-purple-100 text-purple-800 border border-purple-200"
                               : employmentType.toLowerCase() === "freelance"
-                              ? "bg-orange-100 text-orange-800"
-                              : "bg-gray-100 text-gray-800"
+                              ? "bg-orange-100 text-orange-800 border border-orange-200"
+                              : employmentType.toLowerCase() === "internship"
+                              ? "bg-pink-100 text-pink-800 border border-pink-200"
+                              : "bg-gray-100 text-gray-800 border border-gray-200"
                           }`}
                         >
                           {employmentType}
@@ -769,19 +784,87 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                   </div>
                 </div>
 
-                {/* Job Content */}
-                <div className="px-6 pb-4">
-                  <div className="flex items-start space-x-4">
+                {/* Main Job Content */}
+                <div className="p-6">
+                  {/* Job Title */}
+                  <div className="mb-4">
+                    <h3
+                      className="text-2xl font-bold text-gray-900 mb-2 cursor-pointer hover:text-blue-700 transition-colors leading-tight"
+                      onClick={() => openJobModal(job)}
+                    >
+                      {jobTitle}
+                    </h3>
+
+                    {/* Company, Location, Salary Row */}
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
+                      {company && (
+                        <div className="flex items-center bg-gray-50 px-3 py-2 rounded-lg">
+                          <svg
+                            className="w-5 h-5 mr-2 text-gray-600"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="font-semibold text-gray-800">
+                            {company}
+                          </span>
+                        </div>
+                      )}
+                      {location && (
+                        <div className="flex items-center bg-gray-50 px-3 py-2 rounded-lg">
+                          <svg
+                            className="w-5 h-5 mr-2 text-gray-600"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="font-semibold text-gray-800">
+                            {location}
+                          </span>
+                        </div>
+                      )}
+                      {salary && (
+                        <div className="flex items-center bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+                          <svg
+                            className="w-5 h-5 mr-2 text-green-600"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="font-bold text-green-800">
+                            {salary}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-6">
                     {/* Job Image */}
                     {getAttachmentImage(job) && (
                       <div className="flex-shrink-0">
                         <img
                           src={getAttachmentImage(job)!}
                           alt="Job Post"
-                          className="w-20 h-20 rounded-lg object-cover border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                          className="w-28 h-28 rounded-xl object-cover border-2 border-gray-200 cursor-pointer hover:border-blue-300 hover:shadow-lg transition-all"
                           onClick={() => openJobModal(job)}
                           onError={(e) => {
-                            // Hide the image if it fails to load
                             (e.target as HTMLImageElement).style.display =
                               "none";
                           }}
@@ -791,119 +874,151 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
 
                     {/* Job Info */}
                     <div className="flex-1 min-w-0">
-                      <h3
-                        className="text-xl font-bold text-gray-900 mb-2 cursor-pointer hover:text-blue-600 transition-colors"
-                        onClick={() => openJobModal(job)}
-                      >
-                        {jobTitle}
-                      </h3>
-
-                      {/* Company and Location */}
-                      {(company || location) && (
-                        <div className="flex items-center space-x-4 mb-3 text-sm text-gray-600">
-                          {company && (
-                            <span className="flex items-center">
-                              <svg
-                                className="w-4 h-4 mr-1"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              {company}
-                            </span>
-                          )}
-                          {location && (
-                            <span className="flex items-center">
-                              <svg
-                                className="w-4 h-4 mr-1"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              {location}
-                            </span>
-                          )}
-                          {salary && (
-                            <span className="flex items-center">
-                              <svg
-                                className="w-4 h-4 mr-1"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                                <path
-                                  fillRule="evenodd"
-                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              {salary}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
                       {/* Technical Skills */}
                       {job.technicalSkills &&
                         job.technicalSkills.length > 0 && (
-                          <div className="mb-3">
-                            <div className="flex flex-wrap gap-1">
+                          <div className="mb-4">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                              Required Skills
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
                               {job.technicalSkills
-                                .slice(0, 4)
+                                .slice(0, 6)
                                 .map((skill, index) => (
                                   <span
                                     key={index}
-                                    className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium"
+                                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium border border-blue-200"
                                   >
                                     {skill}
                                   </span>
                                 ))}
-                              {job.technicalSkills.length > 4 && (
-                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                  +{job.technicalSkills.length - 4} more
+                              {job.technicalSkills.length > 6 && (
+                                <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium border border-gray-200">
+                                  +{job.technicalSkills.length - 6} more
                                 </span>
                               )}
                             </div>
                           </div>
                         )}
 
+                      {/* Application Methods */}
+                      {job.applicationMethods &&
+                        job.applicationMethods.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                              How to Apply
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {job.applicationMethods.map((method, index) => {
+                                // Handle both object and string formats
+                                const methodObj =
+                                  typeof method === "string"
+                                    ? { type: "info", value: method }
+                                    : method;
+                                return (
+                                  <div
+                                    key={index}
+                                    className="flex items-center bg-green-50 border border-green-200 px-3 py-2 rounded-lg"
+                                  >
+                                    {methodObj.type === "email" && (
+                                      <svg
+                                        className="w-4 h-4 mr-2 text-green-600"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                        />
+                                      </svg>
+                                    )}
+                                    {methodObj.type === "phone" && (
+                                      <svg
+                                        className="w-4 h-4 mr-2 text-green-600"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                        />
+                                      </svg>
+                                    )}
+                                    {methodObj.type === "link" && (
+                                      <svg
+                                        className="w-4 h-4 mr-2 text-green-600"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                                        />
+                                      </svg>
+                                    )}
+                                    {methodObj.type === "whatsapp" && (
+                                      <svg
+                                        className="w-4 h-4 mr-2 text-green-600"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
+                                      </svg>
+                                    )}
+                                    <span className="text-sm font-medium text-green-800">
+                                      {methodObj.type === "email"
+                                        ? methodObj.value
+                                        : methodObj.type === "phone"
+                                        ? methodObj.value
+                                        : methodObj.type === "whatsapp"
+                                        ? methodObj.value
+                                        : methodObj.type === "link"
+                                        ? "Apply Here"
+                                        : methodObj.value}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
                       {/* Job Description */}
-                      <div className="text-gray-700 leading-relaxed mb-4">
-                        <p>
-                          {truncateText(job.originalPost || job.content, 200)}
+                      <div className="text-gray-700 leading-relaxed">
+                        <p className="text-sm">
+                          {truncateText(job.originalPost || job.content, 300)}
                         </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-6">
-                      <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
+                  <div className="flex items-center justify-between pt-6 mt-6 border-t border-gray-200">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-1 text-gray-600">
                         <svg
-                          className="w-5 h-5"
+                          className="w-5 h-5 text-red-500"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
-                          <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                          <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
                         </svg>
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-semibold">
                           {likesCount}
                         </span>
-                      </button>
-                      <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
+                      </div>
+                      <div className="flex items-center space-x-1 text-gray-600">
                         <svg
-                          className="w-5 h-5"
+                          className="w-5 h-5 text-blue-500"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -913,16 +1028,38 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                             clipRule="evenodd"
                           />
                         </svg>
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-semibold">
                           {commentsCount}
                         </span>
-                      </button>
+                      </div>
+                      {job.applicationDeadline && (
+                        <div className="flex items-center space-x-1 text-orange-600 bg-orange-50 px-2 py-1 rounded-lg">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <span className="text-xs font-semibold">
+                            Deadline: {job.applicationDeadline}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-3">
                       <button
                         onClick={() => openJobModal(job)}
-                        className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition-colors font-medium"
+                        className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all shadow-sm"
                       >
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -940,11 +1077,11 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                           />
                         </svg>
-                        <span className="text-sm">View Details</span>
+                        <span>View Details</span>
                       </button>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Scraped: {formatDate(job.scrapedAt)}
+                      <div className="text-xs text-gray-500">
+                        {formatRelativeTime(job.scrapedAt)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -956,117 +1093,363 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
 
       {/* Job Details Modal */}
       {isModalOpen && selectedJob && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-xl">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {selectedJob.jobTitle ||
-                  selectedJob.jobDetails?.title ||
-                  "Job Details"}
-              </h2>
-              <button
-                onClick={closeJobModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="p-6">
-              {/* Job Image */}
-              {getAttachmentImage(selectedJob) && (
-                <div className="mb-6">
-                  <img
-                    src={getAttachmentImage(selectedJob)!}
-                    alt="Job Post"
-                    className="w-full max-w-md mx-auto rounded-lg shadow-md"
-                    onError={(e) => {
-                      // Hide the image if it fails to load
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Job Info Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Job Information
-                  </h3>
-                  <div className="space-y-3">
-                    {selectedJob.jobTitle && (
-                      <div>
-                        <span className="font-medium text-gray-700">
-                          Title:
-                        </span>
-                        <p className="text-gray-900">{selectedJob.jobTitle}</p>
-                      </div>
-                    )}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-white">
+              <div className="flex justify-between items-start">
+                <div className="flex-1 pr-4">
+                  <h2 className="text-3xl font-bold mb-2">
+                    {selectedJob.jobTitle ||
+                      selectedJob.jobDetails?.title ||
+                      "Job Details"}
+                  </h2>
+                  <div className="flex items-center space-x-4 text-blue-100">
                     {selectedJob.company && (
-                      <div>
-                        <span className="font-medium text-gray-700">
-                          Company:
-                        </span>
-                        <p className="text-gray-900">{selectedJob.company}</p>
-                      </div>
+                      <span className="flex items-center">
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        {selectedJob.company}
+                      </span>
                     )}
                     {selectedJob.location && (
-                      <div>
-                        <span className="font-medium text-gray-700">
-                          Location:
-                        </span>
-                        <p className="text-gray-900">{selectedJob.location}</p>
-                      </div>
+                      <span className="flex items-center">
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        {selectedJob.location}
+                      </span>
                     )}
                     {selectedJob.salary && (
-                      <div>
-                        <span className="font-medium text-gray-700">
-                          Salary:
-                        </span>
-                        <p className="text-gray-900">{selectedJob.salary}</p>
-                      </div>
-                    )}
-                    {selectedJob.employmentType && (
-                      <div>
-                        <span className="font-medium text-gray-700">Type:</span>
-                        <p className="text-gray-900">
-                          {selectedJob.employmentType}
-                        </p>
-                      </div>
-                    )}
-                    {selectedJob.applicationDeadline && (
-                      <div>
-                        <span className="font-medium text-gray-700">
-                          Deadline:
-                        </span>
-                        <p className="text-gray-900">
-                          {selectedJob.applicationDeadline}
-                        </p>
-                      </div>
+                      <span className="flex items-center bg-white/20 px-3 py-1 rounded-full">
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        {selectedJob.salary}
+                      </span>
                     )}
                   </div>
                 </div>
+                <div className="flex items-center space-x-3">
+                  <a
+                    href={getPostUrl(selectedJob)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all font-semibold"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                    <span>View Post</span>
+                  </a>
+                  <button
+                    onClick={closeJobModal}
+                    className="text-white/80 hover:text-white bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Author Information
+            <div className="overflow-y-auto max-h-[calc(95vh-140px)]">
+              <div className="p-8">
+                {/* Job Image */}
+                {getAttachmentImage(selectedJob) && (
+                  <div className="mb-8 text-center">
+                    <img
+                      src={getAttachmentImage(selectedJob)!}
+                      alt="Job Post"
+                      className="w-full max-w-2xl mx-auto rounded-xl shadow-lg border border-gray-200"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Quick Info Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  {selectedJob.employmentType && (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-blue-500 rounded-lg mr-3">
+                          <svg
+                            className="w-5 h-5 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6.294a7.943 7.943 0 01-2-.294M16 6H8m0 0V4a2 2 0 012-2h4a2 2 0 012 2v2M8 6v10a2 2 0 002 2h4a2 2 0 002-2V6"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">
+                            Job Type
+                          </p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {selectedJob.employmentType}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedJob.experienceRequired && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-green-500 rounded-lg mr-3">
+                          <svg
+                            className="w-5 h-5 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 10V3L4 14h7v7l9-11h-7z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">
+                            Experience
+                          </p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {selectedJob.experienceRequired}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedJob.applicationDeadline && (
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-xl border border-orange-200">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-orange-500 rounded-lg mr-3">
+                          <svg
+                            className="w-5 h-5 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">
+                            Deadline
+                          </p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {selectedJob.applicationDeadline}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Application Methods */}
+                {selectedJob.applicationMethods &&
+                  selectedJob.applicationMethods.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                        <svg
+                          className="w-6 h-6 mr-2 text-green-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        How to Apply
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedJob.applicationMethods.map((method, index) => {
+                          // Handle both object and string formats
+                          const methodObj =
+                            typeof method === "string"
+                              ? { type: "info", value: method, notes: "" }
+                              : method;
+                          return (
+                            <div
+                              key={index}
+                              className="bg-green-50 border border-green-200 rounded-xl p-4"
+                            >
+                              <div className="flex items-start space-x-3">
+                                {methodObj.type === "email" && (
+                                  <div className="p-2 bg-green-500 rounded-lg">
+                                    <svg
+                                      className="w-5 h-5 text-white"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                      />
+                                    </svg>
+                                  </div>
+                                )}
+                                {methodObj.type === "phone" && (
+                                  <div className="p-2 bg-green-500 rounded-lg">
+                                    <svg
+                                      className="w-5 h-5 text-white"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                      />
+                                    </svg>
+                                  </div>
+                                )}
+                                {methodObj.type === "link" && (
+                                  <div className="p-2 bg-green-500 rounded-lg">
+                                    <svg
+                                      className="w-5 h-5 text-white"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                                      />
+                                    </svg>
+                                  </div>
+                                )}
+                                {methodObj.type === "whatsapp" && (
+                                  <div className="p-2 bg-green-500 rounded-lg">
+                                    <svg
+                                      className="w-5 h-5 text-white"
+                                      fill="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
+                                    </svg>
+                                  </div>
+                                )}
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900 capitalize">
+                                    {methodObj.type}
+                                  </p>
+                                  <p className="text-gray-700 break-all">
+                                    {methodObj.value}
+                                  </p>
+                                  {methodObj.notes && (
+                                    <p className="text-sm text-gray-600 mt-1">
+                                      {methodObj.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Author Information */}
+                <div className="mb-8 bg-gray-50 rounded-xl p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <svg
+                      className="w-6 h-6 mr-2 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    Posted By
                   </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-4">
+                    <a
+                      href={getProfileUrl(selectedJob)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group"
+                    >
                       <img
                         src={getProfileImageUrl(selectedJob)}
                         alt={
@@ -1074,92 +1457,238 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                           selectedJob.author?.name ||
                           "Author"
                         }
-                        className="w-10 h-10 rounded-full"
+                        className="w-16 h-16 rounded-full border-4 border-white shadow-lg group-hover:shadow-xl transition-all"
                       />
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {selectedJob.user?.name ||
-                            selectedJob.author?.name ||
-                            "Unknown"}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {formatDate(selectedJob.postedDate)}
-                        </p>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Group:</span>
-                      <p className="text-gray-900">{selectedJob.groupName}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">
-                        Engagement:
-                      </span>
-                      <p className="text-gray-900">
-                        ❤️{" "}
-                        {selectedJob.likesCount ||
-                          selectedJob.engagementMetrics?.likes ||
-                          0}{" "}
-                        likes • 💬{" "}
-                        {selectedJob.commentsCount ||
-                          selectedJob.engagementMetrics?.comments ||
-                          0}{" "}
-                        comments
+                    </a>
+                    <div className="flex-1">
+                      <a
+                        href={getProfileUrl(selectedJob)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
+                      >
+                        {selectedJob.user?.name ||
+                          selectedJob.author?.name ||
+                          "Unknown"}
+                      </a>
+                      <p className="text-gray-600 mb-2">
+                        {formatDate(selectedJob.postedDate)}
                       </p>
+                      <div className="flex items-center space-x-4 text-sm">
+                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
+                          📍 {selectedJob.groupName}
+                        </span>
+                        <span className="flex items-center text-gray-600">
+                          <svg
+                            className="w-4 h-4 mr-1 text-red-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+                          </svg>
+                          {selectedJob.likesCount ||
+                            selectedJob.engagementMetrics?.likes ||
+                            0}
+                        </span>
+                        <span className="flex items-center text-gray-600">
+                          <svg
+                            className="w-4 h-4 mr-1 text-blue-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          {selectedJob.commentsCount ||
+                            selectedJob.engagementMetrics?.comments ||
+                            0}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Skills */}
-              {selectedJob.technicalSkills &&
-                selectedJob.technicalSkills.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                      Required Skills
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedJob.technicalSkills.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                {/* Skills */}
+                {selectedJob.technicalSkills &&
+                  selectedJob.technicalSkills.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                        <svg
+                          className="w-6 h-6 mr-2 text-purple-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          {skill}
-                        </span>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          />
+                        </svg>
+                        Required Skills
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {selectedJob.technicalSkills.map((skill, index) => (
+                          <div
+                            key={index}
+                            className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 px-4 py-3 rounded-xl text-center"
+                          >
+                            <span className="font-semibold text-purple-800">
+                              {skill}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Benefits */}
+                {selectedJob.benefits && selectedJob.benefits.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                      <svg
+                        className="w-6 h-6 mr-2 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Benefits & Perks
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedJob.benefits.map((benefit, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center bg-green-50 border border-green-200 px-4 py-3 rounded-xl"
+                        >
+                          <svg
+                            className="w-5 h-5 mr-3 text-green-600 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          <span className="text-gray-800">{benefit}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-              {/* Full Content */}
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Full Job Post
-                </h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-700 whitespace-pre-wrap">
-                    {selectedJob.originalPost ||
-                      selectedJob.content ||
-                      "No content available"}
-                  </p>
-                </div>
-              </div>
+                {/* Responsibilities */}
+                {selectedJob.responsibilities &&
+                  selectedJob.responsibilities.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                        <svg
+                          className="w-6 h-6 mr-2 text-indigo-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                          />
+                        </svg>
+                        Key Responsibilities
+                      </h3>
+                      <div className="space-y-3">
+                        {selectedJob.responsibilities.map(
+                          (responsibility, index) => (
+                            <div
+                              key={index}
+                              className="flex items-start bg-indigo-50 border border-indigo-200 px-4 py-3 rounded-xl"
+                            >
+                              <span className="bg-indigo-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                                {index + 1}
+                              </span>
+                              <span className="text-gray-800">
+                                {responsibility}
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
 
-              {/* OCR Text from attachments */}
-              {selectedJob.attachments &&
-                selectedJob.attachments.length > 0 &&
-                selectedJob.attachments[0].ocrText && (
-                  <div className="mt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      Extracted Text from Image
-                    </h3>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                      <p className="text-gray-700">
-                        {selectedJob.attachments[0].ocrText}
+                {/* Full Content */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <svg
+                      className="w-6 h-6 mr-2 text-gray-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    Full Job Description
+                  </h3>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                    <div className="prose prose-gray max-w-none">
+                      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        {selectedJob.originalPost ||
+                          selectedJob.content ||
+                          "No content available"}
                       </p>
                     </div>
                   </div>
-                )}
+                </div>
+
+                {/* OCR Text from attachments */}
+                {selectedJob.attachments &&
+                  selectedJob.attachments.length > 0 &&
+                  selectedJob.attachments[0].ocrText && (
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                        <svg
+                          className="w-6 h-6 mr-2 text-yellow-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        Extracted Text from Image
+                      </h3>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                        <p className="text-gray-700 leading-relaxed">
+                          {selectedJob.attachments[0].ocrText}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+              </div>
             </div>
           </div>
         </div>
