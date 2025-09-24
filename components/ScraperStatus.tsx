@@ -93,22 +93,32 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
           maxPosts: settings.maxPosts,
           scrapeComments: settings.scrapeComments,
           scrapePhotos: settings.scrapePhotos,
+          timeout: settings.timeout,
         }),
       });
 
       const result = await response.json();
       if (result.success) {
-        setLogs((prev) => [...prev, `✅ Scraping completed successfully`]);
         setLogs((prev) => [
           ...prev,
-          `📊 Found ${result.data?.totalPosts || 0} posts, processed ${
-            result.data?.jobExtraction?.savedJobs || 0
-          } jobs`,
+          `✅ Scraping completed successfully`,
+          result.message
+            ? `ℹ️ ${result.message}`
+            : `📊 Summary: processed ${
+                result?.jobExtraction?.savedJobs ??
+                result?.data?.jobExtraction?.savedJobs ??
+                0
+              } jobs`,
         ]);
         onUpdate();
         fetchStatus();
       } else {
-        setLogs((prev) => [...prev, `❌ Error: ${result.error}`]);
+        setLogs((prev) => [
+          ...prev,
+          `❌ Error: ${
+            typeof result.error === "string" ? result.error : "Unknown error"
+          }`,
+        ]);
       }
     } catch (error) {
       setLogs((prev) => [...prev, `❌ Error: ${error}`]);
@@ -203,7 +213,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
         {status && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Running Processes */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold text-gray-900">
                   Running Processes
@@ -244,7 +254,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
             </div>
 
             {/* Recent Runs */}
-            <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-4 rounded-lg border border-gray-100">
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold text-gray-900">Recent Runs</h4>
                 <span className="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">
@@ -472,7 +482,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
           <button
             onClick={startScraping}
             disabled={isRunning || selectedGroups.length === 0}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-sm"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-sm"
           >
             {isRunning ? (
               <>
@@ -502,7 +512,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
           {status?.runningProcesses.length > 0 && (
             <button
               onClick={abortScraping}
-              className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 flex items-center gap-2 font-medium shadow-sm"
+              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 font-medium shadow-sm"
             >
               <svg
                 className="w-4 h-4"
@@ -529,7 +539,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
 
           <button
             onClick={() => setLogs([])}
-            className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 flex items-center gap-2 font-medium shadow-sm"
+            className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 flex items-center gap-2 font-medium shadow-sm"
           >
             <svg
               className="w-4 h-4"
