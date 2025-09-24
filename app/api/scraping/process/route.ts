@@ -160,78 +160,95 @@ export async function POST(request: NextRequest) {
       processingTime,
     };
 
-    // Step 2: Process posts through external AI job filtering
-    if (posts.length > 0) {
+  // Step 2: Process posts through external AI job filtering
+  if (Array.isArray(posts) && posts.length > 0) {
       try {
-        console.log('🔄 Processing scraped posts through external AI job filtering...');
-        
+        console.log(
+          "🔄 Processing scraped posts through external AI job filtering..."
+        );
+
         // Convert posts to string format for external API
         const postsJson = JSON.stringify(posts);
-        
+
         // Send to external AI for job filtering and structuring
-        const externalFilterResult = await ExternalJobFilterService.filterAndStructureJobs(postsJson);
-        
+        const externalFilterResult =
+          await ExternalJobFilterService.filterAndStructureJobs(postsJson);
+
         if (externalFilterResult.success && externalFilterResult.data) {
           // Parse and save structured job posts
-          const structuredJobs = ExternalJobFilterService.parseExternalResponse(externalFilterResult.data);
-          
+          const structuredJobs = ExternalJobFilterService.parseExternalResponse(
+            externalFilterResult.data
+          );
+
           if (structuredJobs.length > 0) {
             await dbConnection.connect();
             const db = dbConnection.getDb();
-            
+
             const savedJobs = [];
             for (const job of structuredJobs) {
               try {
                 const jobData = {
                   ...job,
-                  source: 'facebook_processing_external_ai',
+                  source: "facebook_processing_external_ai",
                   extractedAt: new Date(),
-                  processingVersion: 'external_ai_v1',
+                  processingVersion: "external_ai_v1",
                   originalPostsCount: posts.length,
                   groupId,
-                  groupName
+                  groupName,
                 };
 
-                const result = await db.collection('jobs').insertOne(jobData);
+                const result = await db.collection("jobs").insertOne(jobData);
                 savedJobs.push({
                   ...jobData,
-                  _id: result.insertedId
+                  _id: result.insertedId,
                 });
               } catch (dbError) {
-                console.error('❌ Error saving structured job to database:', dbError);
+                console.error(
+                  "❌ Error saving structured job to database:",
+                  dbError
+                );
               }
             }
-            
+
             // Add job extraction results to response
             responseData.jobExtraction = {
               success: true,
               structuredJobsFound: structuredJobs.length,
               savedJobs: savedJobs.length,
-              processingMethod: 'external_ai'
+              processingMethod: "external_ai",
             };
-            
-            console.log(`✅ Successfully processed ${savedJobs.length} structured jobs from external AI`);
+
+            console.log(
+              `✅ Successfully processed ${savedJobs.length} structured jobs from external AI`
+            );
           } else {
             responseData.jobExtraction = {
               success: true,
               structuredJobsFound: 0,
-              message: 'No job posts identified by external AI'
+              message: "No job posts identified by external AI",
             };
           }
         } else {
-          console.warn('⚠️ External AI job filtering failed:', externalFilterResult.error);
+          console.warn(
+            "⚠️ External AI job filtering failed:",
+            externalFilterResult.error
+          );
           responseData.jobExtraction = {
             success: false,
             error: externalFilterResult.error,
-            fallback: 'External AI unavailable - posts saved without job structuring'
+            fallback:
+              "External AI unavailable - posts saved without job structuring",
           };
         }
       } catch (jobProcessingError) {
-        console.error('❌ Error during job processing:', jobProcessingError);
+        console.error("❌ Error during job processing:", jobProcessingError);
         responseData.jobExtraction = {
           success: false,
-          error: 'Job processing failed',
-          details: jobProcessingError instanceof Error ? jobProcessingError.message : 'Unknown error'
+          error: "Job processing failed",
+          details:
+            jobProcessingError instanceof Error
+              ? jobProcessingError.message
+              : "Unknown error",
         };
       }
     }

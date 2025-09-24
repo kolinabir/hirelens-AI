@@ -191,6 +191,12 @@ export class DatabaseUtils {
     return result.deletedCount > 0;
   }
 
+  static async clearAllJobPosts(): Promise<number> {
+    const collection = dbConnection.getJobsCollection();
+    const result = await collection.deleteMany({});
+    return result.deletedCount;
+  }
+
   // Apify-specific operations
   static async saveApifyPosts(
     apifyPosts: ApifyPost[],

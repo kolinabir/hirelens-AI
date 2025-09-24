@@ -2,6 +2,37 @@ import { NextRequest, NextResponse } from "next/server";
 import { apifyService } from "@/lib/apify-service";
 import { DatabaseUtils } from "@/lib/database";
 import { apiLogger } from "@/lib/logger";
+import { ExternalJobFilterService } from "@/lib/external-job-filter";
+import dbConnection from "@/lib/database";
+
+interface AutoScrapingResponseData {
+  totalGroups: number;
+  totalPosts: number;
+  saved: number;
+  duplicates: number;
+  executionTime: string;
+  groups: Array<{
+    groupId: string;
+    groupName: string;
+    postsFound: number;
+    saved: number;
+    duplicates: number;
+  }>;
+  jobExtraction?: {
+    success: boolean;
+    structuredJobsFound?: number;
+    savedJobs?: number;
+    processingMethod?: string;
+    message?: string;
+    error?: string;
+    fallback?: string;
+    details?: string;
+  };
+  // runtime metadata additions
+  runId?: string;
+  aborted?: boolean;
+  status?: string;
+}
 
 /**
  * @swagger
@@ -61,9 +92,20 @@ export async function POST(request: NextRequest) {
   try {
     // Simple authentication for cron jobs
     const cronKey = request.headers.get("x-cron-key");
-    const expectedKey = process.env.CRON_SECRET_KEY || "default-cron-key";
+    const expectedKey = process.env.CRON_SECRET_KEY;
 
-    if (cronKey !== expectedKey) {
+    if (!expectedKey) {
+      apiLogger.error("CRON_SECRET_KEY environment variable not set");
+      return NextResponse.json(
+        { success: false, error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
+    if (!cronKey || cronKey !== expectedKey) {
+      apiLogger.warn("Unauthorized cron trigger attempt", { 
+        providedKey: cronKey ? "***" : "none"
+      });
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
@@ -71,6 +113,9 @@ export async function POST(request: NextRequest) {
     }
 
     apiLogger.info("Starting automatic scraping trigger");
+
+    // Ensure database connection
+    await dbConnection.connect();
 
     // Get all active groups
     const activeGroups = await DatabaseUtils.findGroups({ isActive: true });
@@ -106,8 +151,52 @@ export async function POST(request: NextRequest) {
       config,
     });
 
-    // Execute scraping
-    const posts = await apifyService.scrapeFacebookGroups(config);
+    // Start async run with 60s watchdog
+    const { runId } = await apifyService.startScraping(config);
+    const maxDurationMs = 60_000;
+    const pollIntervalMs = 3_000;
+    const t0 = Date.now();
+    let lastStatus = "RUNNING";
+    let aborted = false;
+
+    while (Date.now() - t0 < maxDurationMs) {
+      try {
+        const status = await apifyService.getRunStatus(runId);
+        lastStatus = status.status;
+        if (["SUCCEEDED", "FAILED", "ABORTED"].includes(lastStatus)) {
+          break;
+        }
+      } catch (e) {
+        apiLogger.error("Error polling Apify run status", { error: e, runId });
+        break;
+      }
+      await new Promise((r) => setTimeout(r, pollIntervalMs));
+    }
+
+    if (!["SUCCEEDED", "FAILED", "ABORTED"].includes(lastStatus)) {
+      apiLogger.info("Max runtime reached, aborting run via abort API", { runId });
+      try {
+        const res = await fetch("http://localhost:3000/api/scraping/abort", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ runId }),
+        });
+        apiLogger.info("Abort API called", { status: res.status });
+        aborted = true;
+      } catch (e) {
+        apiLogger.error("Abort API call failed", { error: e, runId });
+        // Fallback to direct Apify abort
+        try {
+          await apifyService.abortRun(runId);
+          aborted = true;
+        } catch (err) {
+          apiLogger.error("Direct Apify abort failed", { error: err, runId });
+        }
+      }
+    }
+
+    // Retrieve results of the run
+    const posts = await apifyService.getRunResults(runId);
 
     // Process and save posts for each group
     let totalSaved = 0;
@@ -148,14 +237,100 @@ export async function POST(request: NextRequest) {
 
     const executionTime = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
 
-    const responseData = {
+    const responseData: AutoScrapingResponseData = {
       totalGroups: activeGroups.length,
       totalPosts: posts.length,
       saved: totalSaved,
       duplicates: totalDuplicates,
       executionTime,
       groups: groupResults,
+      runId,
+      aborted,
+      status: lastStatus,
     };
+
+    // Step 2: Process posts through external AI job filtering
+    if (Array.isArray(posts) && posts.length > 0) {
+      try {
+        apiLogger.info("Processing scraped posts through external AI job filtering...");
+
+        // Convert posts to string format for external API
+        const postsJson = JSON.stringify(posts);
+
+        // Send to external AI for job filtering and structuring
+        const externalFilterResult =
+          await ExternalJobFilterService.filterAndStructureJobs(postsJson);
+
+        if (externalFilterResult.success && externalFilterResult.data) {
+          // Parse and save structured job posts
+          const structuredJobs = ExternalJobFilterService.parseExternalResponse(
+            externalFilterResult.data
+          );
+
+          if (structuredJobs.length > 0) {
+            await dbConnection.connect();
+            const db = dbConnection.getDb();
+
+            const savedJobs = [];
+            for (const job of structuredJobs) {
+              try {
+                const jobData = {
+                  ...job,
+                  source: "facebook_auto_scraping_external_ai",
+                  extractedAt: new Date(),
+                  processingVersion: "external_ai_v1",
+                  originalPostsCount: posts.length,
+                  scrapingType: "automatic",
+                };
+
+                const result = await db.collection("jobs").insertOne(jobData);
+                savedJobs.push({
+                  ...jobData,
+                  _id: result.insertedId,
+                });
+              } catch (dbError) {
+                apiLogger.error("Error saving structured job to database:", dbError);
+              }
+            }
+
+            // Add job extraction results to response
+            responseData.jobExtraction = {
+              success: true,
+              structuredJobsFound: structuredJobs.length,
+              savedJobs: savedJobs.length,
+              processingMethod: "external_ai",
+            };
+
+            apiLogger.info(
+              `Successfully processed ${savedJobs.length} structured jobs from external AI during auto-scraping`
+            );
+          } else {
+            responseData.jobExtraction = {
+              success: true,
+              structuredJobsFound: 0,
+              message: "No job posts identified by external AI",
+            };
+          }
+        } else {
+          apiLogger.warn("External AI job filtering failed:", externalFilterResult.error);
+          responseData.jobExtraction = {
+            success: false,
+            error: externalFilterResult.error,
+            fallback: "External AI unavailable - posts saved without job structuring",
+          };
+        }
+      } catch (jobProcessingError) {
+        apiLogger.error("Error during job processing:", jobProcessingError);
+        responseData.jobExtraction = {
+          success: false,
+          error: "Job processing failed",
+          details:
+            jobProcessingError instanceof Error
+              ? jobProcessingError.message
+              : "Unknown error",
+        };
+      }
+    }
 
     apiLogger.info("Automatic scraping completed", responseData);
 

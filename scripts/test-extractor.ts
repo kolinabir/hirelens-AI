@@ -5,7 +5,7 @@
  * Usage: npx ts-node scripts/test-extractor.ts "facebook_posts_json_string"
  */
 
-import { JobPostExtractor } from '../lib/job-extractor';
+import { JobPostExtractor } from "../lib/job-extractor";
 
 // Sample Facebook posts for testing
 const samplePosts = JSON.stringify([
@@ -13,13 +13,13 @@ const samplePosts = JSON.stringify([
     facebookUrl: "https://www.facebook.com/groups/devforhire/posts/123456",
     user: {
       id: "user123",
-      name: "John Doe"
+      name: "John Doe",
     },
     likesCount: 15,
     commentsCount: 5,
     attachments: [],
-    text: `🚀 We are hiring Full Stack Developer at TechCorp! 
-    
+    text: `🚀 We are hiring Full Stack Developer at TechCorp!
+
 Position: Senior Full Stack Developer
 Company: TechCorp Bangladesh
 Experience: 3+ years required
@@ -46,13 +46,13 @@ How to Apply:
 Send your CV to careers@techcorp.com or WhatsApp: +8801712345678
 Subject: Senior Full Stack Developer Application
 
-Deadline: 30th December 2025`
+Deadline: 30th December 2025`,
   },
   {
     facebookUrl: "https://www.facebook.com/groups/devforhire/posts/789012",
     user: {
       id: "user456",
-      name: "Jane Smith"
+      name: "Jane Smith",
     },
     likesCount: 8,
     commentsCount: 2,
@@ -81,48 +81,52 @@ Apply by filling this form: https://forms.google.com/xyz123
 Or email your portfolio to design@startupxyz.com
 
 Gender: Open to all
-Application Deadline: 15th January 2026`
+Application Deadline: 15th January 2026`,
   },
   {
     facebookUrl: "https://www.facebook.com/groups/devforhire/posts/345678",
     user: {
       id: "user789",
-      name: "Not A Job"
+      name: "Not A Job",
     },
     likesCount: 3,
     commentsCount: 1,
     attachments: [],
-    text: `Just wanted to share my weekend coding project! Built a cool weather app using React and OpenWeatherMap API. 
+    text: `Just wanted to share my weekend coding project! Built a cool weather app using React and OpenWeatherMap API.
 
 Check it out: https://myweatherapp.com
 
-Thanks to this amazing community for all the learning resources! 🙌`
-  }
+Thanks to this amazing community for all the learning resources! 🙌`,
+  },
 ]);
 
 function testExtractor() {
-  console.log('🧪 Testing Job Post Extractor\n');
-  
+  console.log("🧪 Testing Job Post Extractor\n");
+
   // Get input from command line or use sample
   const input = process.argv[2] || samplePosts;
-  
-  console.log('📥 Input:');
+
+  console.log("📥 Input:");
   console.log(input);
-  console.log('\n' + '='.repeat(80) + '\n');
-  
+  console.log("\n" + "=".repeat(80) + "\n");
+
   try {
     const result = JobPostExtractor.extractJobPosts(input);
-    
-    console.log('📤 Extracted Job Posts:');
+
+    console.log("📤 Extracted Job Posts:");
     console.log(JSON.stringify(result, null, 2));
-    
-    console.log('\n📊 Summary:');
+
+    console.log("\n📊 Summary:");
     console.log(`- Total posts processed: ${JSON.parse(input).length}`);
     console.log(`- Job posts extracted: ${result.length}`);
-    console.log(`- Non-job posts filtered: ${JSON.parse(input).length - result.length}`);
-    
+    console.log(
+      `- Non-job posts filtered: ${JSON.parse(input).length - result.length}`
+    );
   } catch (error) {
-    console.error('❌ Error:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      "❌ Error:",
+      error instanceof Error ? error.message : "Unknown error"
+    );
   }
 }
 

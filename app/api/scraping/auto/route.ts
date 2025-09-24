@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DatabaseUtils } from "@/lib/database";
 import { apiLogger } from "@/lib/logger";
+import dbConnection from "@/lib/database";
 
 /**
  * @swagger
@@ -71,10 +72,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      enabled = true,
-      frequency = "twice_daily",
-      customSchedule,
-      maxPostsPerGroup = 30,
+      enabled = process.env.AUTO_SCRAPING_ENABLED === "true" || true,
+      frequency = process.env.AUTO_SCRAPING_FREQUENCY || "twice_daily",
+      customSchedule = process.env.AUTO_SCRAPING_SCHEDULE,
+      maxPostsPerGroup = parseInt(process.env.AUTO_SCRAPING_MAX_POSTS || "30"),
       scrapePhotos = true,
     } = body;
 
@@ -179,6 +180,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    // Ensure database connection
+    await dbConnection.connect();
+    
     // Get active groups
     const activeGroups = await DatabaseUtils.findGroups({ isActive: true });
 

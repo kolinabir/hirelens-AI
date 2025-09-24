@@ -56,13 +56,18 @@ export interface ApifyScrapingConfig {
 
 export class ApifyService {
   private readonly baseUrl = "https://api.apify.com/v2";
-  private readonly actorId = "apify~facebook-groups-scraper";
+  private readonly actorId: string;
   private readonly token: string;
 
   constructor() {
     this.token = process.env.APIFY_API_TOKEN || "";
+    this.actorId = process.env.APIFY_ACTOR_ID || "apify~facebook-groups-scraper";
+
     if (!this.token) {
       throw new Error("APIFY_API_TOKEN is required");
+    }
+    if (!this.actorId) {
+      throw new Error("APIFY_ACTOR_ID is required");
     }
   }
 
@@ -74,12 +79,16 @@ export class ApifyService {
   ): Promise<ApifyPost[]> {
     try {
       const inputData = {
-        startUrls: config.groupUrls.map((url) => ({ url })), // Convert to objects
-        maxPosts: config.maxPosts || 50,
-        maxComments: config.maxComments || 0,
-        scrapeComments: config.scrapeComments || false,
-        scrapePhotos: config.scrapePhotos || true,
-        maxPhotos: config.maxPhotos || 5,
+        startUrls: config.groupUrls.map((url) => ({ url })),
+        resultsLimit: config.maxPosts || 100,
+        useSessionPool: true,
+        persistCookiesPerSession: true,
+        maxRequestRetries: 10,
+        viewOption: "CHRONOLOGICAL",
+        proxy: {
+          useApifyProxy: true,
+          apifyProxyGroups: ["RESIDENTIAL"]
+        }
       };
 
       apiLogger.info("Starting Apify Facebook Groups scraping", {
@@ -121,12 +130,16 @@ export class ApifyService {
   async startScraping(config: ApifyScrapingConfig): Promise<{ runId: string }> {
     try {
       const inputData = {
-        startUrls: config.groupUrls.map((url) => ({ url })), // Convert to objects
-        maxPosts: config.maxPosts || 50,
-        maxComments: config.maxComments || 0,
-        scrapeComments: config.scrapeComments || false,
-        scrapePhotos: config.scrapePhotos || true,
-        maxPhotos: config.maxPhotos || 5,
+        startUrls: config.groupUrls.map((url) => ({ url })),
+        resultsLimit: config.maxPosts || 100,
+        useSessionPool: true,
+        persistCookiesPerSession: true,
+        maxRequestRetries: 10,
+        viewOption: "CHRONOLOGICAL",
+        proxy: {
+          useApifyProxy: true,
+          apifyProxyGroups: ["RESIDENTIAL"],
+        },
       };
 
       apiLogger.info("Starting async Apify Facebook Groups scraping", {
@@ -169,7 +182,7 @@ export class ApifyService {
       apiLogger.info("Fetching Apify run results", { runId });
 
       const response = await fetch(
-        `${this.baseUrl}/acts/${this.actorId}/runs/${runId}/dataset/items?token=${this.token}`,
+        `${this.baseUrl}/actor-runs/${runId}/dataset/items?token=${this.token}`,
         {
           method: "GET",
         }
@@ -201,7 +214,7 @@ export class ApifyService {
   ): Promise<{ status: string; statusMessage?: string }> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/acts/${this.actorId}/runs/${runId}?token=${this.token}`,
+        `${this.baseUrl}/actor-runs/${runId}?token=${this.token}`,
         {
           method: "GET",
         }
