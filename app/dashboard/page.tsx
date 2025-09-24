@@ -408,15 +408,13 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium text-purple-600 uppercase tracking-wide">
-                        Structured Jobs
+                        Processed Jobs
                       </h3>
                       <p className="text-3xl font-bold text-purple-900 mt-2">
-                        {stats?.totalJobs
-                          ? Math.floor(stats.totalJobs * 0.7)
-                          : 0}
+                        {stats?.processedJobs || 0}
                       </p>
                       <p className="text-sm text-purple-700 mt-1">
-                        AI processed
+                        AI processed ({stats?.unprocessedJobs || 0} remaining)
                       </p>
                     </div>
                     <div className="p-3 bg-purple-500 rounded-lg">
@@ -444,7 +442,7 @@ export default function Dashboard() {
                         Success Rate
                       </h3>
                       <p className="text-3xl font-bold text-orange-900 mt-2">
-                        {Math.floor(Math.random() * 20 + 75)}%
+                        {stats?.successRate || 0}%
                       </p>
                       <p className="text-sm text-orange-700 mt-1">
                         Processing accuracy

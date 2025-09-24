@@ -159,7 +159,11 @@ export interface ScrollConfig {
 export interface DashboardStats {
   totalJobs: number;
   todayJobs: number;
+  processedJobs: number;
+  unprocessedJobs: number;
+  structuredJobs: number;
   activeGroups: number;
+  successRate: number;
   activeSessions: number;
   lastUpdate: Date;
 }

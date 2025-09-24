@@ -309,16 +309,48 @@ export class DatabaseUtils {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [totalJobs, todayJobs, activeGroups] = await Promise.all([
-      DatabaseUtils.countJobPosts(),
-      DatabaseUtils.countJobPosts({ scrapedAt: { $gte: today } }),
+    // Use the same filters as the jobs API to ensure consistency
+    const baseFilter = { isDuplicate: { $ne: true } };
+    const todayFilter = {
+      ...baseFilter,
+      scrapedAt: { $gte: today },
+    };
+
+    const [
+      totalJobs,
+      todayJobs,
+      processedJobs,
+      unprocessedJobs,
+      structuredJobs,
+      activeGroups,
+    ] = await Promise.all([
+      DatabaseUtils.countJobPosts(baseFilter),
+      DatabaseUtils.countJobPosts(todayFilter),
+      DatabaseUtils.countJobPosts({ ...baseFilter, isProcessed: true }),
+      DatabaseUtils.countJobPosts({ ...baseFilter, isProcessed: false }),
+      DatabaseUtils.countJobPosts({
+        ...baseFilter,
+        $or: [
+          { jobDetails: { $exists: true, $ne: null } },
+          { jobTitle: { $exists: true, $ne: "" } },
+          { company: { $exists: true, $ne: "" } },
+        ],
+      } as Filter<JobPost>),
       DatabaseUtils.countGroups({ isActive: true }),
     ]);
+
+    // Calculate success rate based on processed vs total jobs
+    const successRate =
+      totalJobs > 0 ? Math.round((processedJobs / totalJobs) * 100) : 0;
 
     return {
       totalJobs,
       todayJobs,
+      processedJobs,
+      unprocessedJobs,
+      structuredJobs,
       activeGroups,
+      successRate,
       activeSessions: 0, // No longer tracking sessions
       lastUpdate: new Date(),
     };
