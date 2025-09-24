@@ -5,26 +5,32 @@ import { swaggerSpec } from "@/lib/swagger";
  * Simple fallback documentation page
  */
 export async function GET() {
-  const spec = swaggerSpec as { paths?: Record<string, Record<string, { summary?: string; tags?: string[] }>>; info?: { version?: string; description?: string } };
+  const spec = swaggerSpec as {
+    paths?: Record<
+      string,
+      Record<string, { summary?: string; tags?: string[] }>
+    >;
+    info?: { version?: string; description?: string };
+  };
   const paths = Object.keys(spec.paths || {});
-  
-  let endpointsHtml = '';
-  
-  paths.forEach(path => {
+
+  let endpointsHtml = "";
+
+  paths.forEach((path) => {
     const pathObj = spec.paths?.[path];
     if (!pathObj) return;
-    
-    Object.keys(pathObj).forEach(method => {
+
+    Object.keys(pathObj).forEach((method) => {
       const operation = pathObj[method];
       if (!operation) return;
-      
-      const tag = operation.tags?.[0] || 'General';
-      
+
+      const tag = operation.tags?.[0] || "General";
+
       endpointsHtml += `
         <div class="endpoint">
           <div class="method ${method.toLowerCase()}">${method.toUpperCase()}</div>
           <div class="path">${path}</div>
-          <div class="summary">${operation.summary || 'No summary'}</div>
+          <div class="summary">${operation.summary || "No summary"}</div>
           <div class="tag">${tag}</div>
         </div>
       `;
@@ -152,19 +158,21 @@ export async function GET() {
     <h1>HireLens API Documentation</h1>
     <p>AI-Powered Job Discovery Platform - API Reference</p>
   </div>
-  
+
   <div class="container">
     <div class="info">
       <h2>API Information</h2>
-      <p><strong>Version:</strong> ${spec.info?.version || '2.0.0'}</p>
-      <p><strong>Description:</strong> ${spec.info?.description || 'HireLens API Documentation'}</p>
-      
+      <p><strong>Version:</strong> ${spec.info?.version || "2.0.0"}</p>
+      <p><strong>Description:</strong> ${
+        spec.info?.description || "HireLens API Documentation"
+      }</p>
+
       <div class="links">
         <a href="/api/docs" class="link">🔄 Try Full Swagger UI</a>
         <a href="/api/docs/spec" class="link secondary">📄 View JSON Spec</a>
       </div>
     </div>
-    
+
     <div class="endpoints">
       <h2>API Endpoints (${paths.length} total)</h2>
       ${endpointsHtml}
