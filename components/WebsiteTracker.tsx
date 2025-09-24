@@ -19,7 +19,9 @@ export default function WebsiteTracker({ onUpdate }: WebsiteTrackerProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [scraping, setScraping] = useState<string | null>(null); // websiteId being scraped
   const [showJobs, setShowJobs] = useState(false);
-  const [selectedWebsiteId, setSelectedWebsiteId] = useState<string | null>(null);
+  const [selectedWebsiteId, setSelectedWebsiteId] = useState<string | null>(
+    null
+  );
 
   const fetchWebsites = useCallback(async () => {
     try {
@@ -425,10 +427,13 @@ export default function WebsiteTracker({ onUpdate }: WebsiteTrackerProps) {
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">
-              {selectedWebsiteId 
-                ? `Jobs from ${websites.find(w => w._id?.toString() === selectedWebsiteId)?.name || 'Selected Website'}` 
-                : 'All Website Jobs'
-              }
+              {selectedWebsiteId
+                ? `Jobs from ${
+                    websites.find(
+                      (w) => w._id?.toString() === selectedWebsiteId
+                    )?.name || "Selected Website"
+                  }`
+                : "All Website Jobs"}
             </h2>
             <div className="flex items-center space-x-3">
               {selectedWebsiteId && (
@@ -449,8 +454,8 @@ export default function WebsiteTracker({ onUpdate }: WebsiteTrackerProps) {
               </button>
             </div>
           </div>
-          
-          <WebsiteJobsList 
+
+          <WebsiteJobsList
             websiteId={selectedWebsiteId || undefined}
             showAll={!selectedWebsiteId}
             limit={selectedWebsiteId ? 50 : 20}
@@ -468,8 +473,18 @@ export default function WebsiteTracker({ onUpdate }: WebsiteTrackerProps) {
             }}
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            <svg className="-ml-1 mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6.5" />
+            <svg
+              className="-ml-1 mr-3 h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6.5"
+              />
             </svg>
             View All Scraped Jobs
           </button>

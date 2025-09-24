@@ -103,6 +103,15 @@ export class SmythAIScraper {
     }
   }
 
+  // Helper method to normalize job title for comparison
+  static normalizeJobTitle(title: string): string {
+    return title
+      .replace(/[`'"]/g, "") // Remove quotes and backticks
+      .replace(/\s+/g, " ") // Normalize whitespace
+      .trim()
+      .toLowerCase();
+  }
+
   // Helper method to compare jobs and find new ones
   static findNewJobs(
     currentJobs: WebsiteJobData[],
@@ -116,7 +125,7 @@ export class SmythAIScraper {
     const previousJobIds = new Set(
       previousJobs.map(
         (job) =>
-          `${job.jobTitle}-${job.companyName}-${
+          `${this.normalizeJobTitle(job.jobTitle)}-${job.companyName}-${
             job.applicationDeadline || "no-deadline"
           }`
       )
@@ -124,9 +133,9 @@ export class SmythAIScraper {
 
     // Find jobs that don't exist in previous snapshot
     return currentJobs.filter((job) => {
-      const jobId = `${job.jobTitle}-${job.companyName}-${
-        job.applicationDeadline || "no-deadline"
-      }`;
+      const jobId = `${this.normalizeJobTitle(job.jobTitle)}-${
+        job.companyName
+      }-${job.applicationDeadline || "no-deadline"}`;
       return !previousJobIds.has(jobId);
     });
   }

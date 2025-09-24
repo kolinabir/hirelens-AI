@@ -258,6 +258,7 @@ export interface WebsiteSnapshot {
   websiteId: string; // reference to TrackedWebsite._id
   websiteUrl: string;
   scrapedAt: Date;
+  lastChecked?: Date; // when this snapshot was last verified (without creating new snapshot)
   jobCount: number;
   jobs: WebsiteJobData[];
   newJobsFound?: number; // compared to previous snapshot

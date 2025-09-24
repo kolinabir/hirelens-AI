@@ -81,19 +81,52 @@ export async function POST(request: NextRequest) {
           `📊 ${website.name}: ${scrapeResult.jobs.length} total jobs, ${newJobs.length} new jobs`
         );
 
-        // Create new snapshot
-        const snapshot: Omit<WebsiteSnapshot, "_id"> = {
-          websiteId: website._id?.toString() || "",
-          websiteUrl: website.url,
-          scrapedAt: new Date(),
-          jobCount: scrapeResult.jobs.length,
-          jobs: scrapeResult.jobs,
-          newJobsFound: newJobs.length,
-          newJobs: newJobs,
-          rawApiResponse: scrapeResult.rawResponse,
-        };
+        // Only create snapshot if there are new jobs or job count changed
+        const shouldCreateSnapshot =
+          newJobs.length > 0 ||
+          !lastSnapshot ||
+          lastSnapshot.jobCount !== scrapeResult.jobs.length;
 
-        await snapshotsCol.insertOne(snapshot);
+        if (shouldCreateSnapshot) {
+          console.log(
+            `📸 Creating new snapshot for ${website.name} (${
+              newJobs.length
+            } new jobs, count changed: ${
+              !lastSnapshot ||
+              lastSnapshot.jobCount !== scrapeResult.jobs.length
+            })`
+          );
+
+          const snapshot: Omit<WebsiteSnapshot, "_id"> = {
+            websiteId: website._id?.toString() || "",
+            websiteUrl: website.url,
+            scrapedAt: new Date(),
+            jobCount: scrapeResult.jobs.length,
+            jobs: scrapeResult.jobs,
+            newJobsFound: newJobs.length,
+            newJobs: newJobs,
+            rawApiResponse: scrapeResult.rawResponse,
+          };
+
+          await snapshotsCol.insertOne(snapshot);
+        } else {
+          console.log(
+            `⏭️ Skipping snapshot for ${website.name} - no changes detected`
+          );
+
+          // Update the lastScraped timestamp on the most recent snapshot
+          if (lastSnapshot) {
+            await snapshotsCol.updateOne(
+              { _id: lastSnapshot._id },
+              {
+                $set: {
+                  lastChecked: new Date(),
+                  rawApiResponse: scrapeResult.rawResponse,
+                },
+              }
+            );
+          }
+        }
 
         // Update website stats
         await websitesCol.updateOne(
