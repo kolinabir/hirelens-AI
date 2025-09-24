@@ -125,13 +125,22 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
 
   const getAttachmentImage = (job: JobPost) => {
     const attachment = job.attachments?.[0];
+    let imageUrl = null;
+
     if (attachment?.photo_image?.uri) {
-      return attachment.photo_image.uri;
+      imageUrl = attachment.photo_image.uri;
+    } else if (attachment?.url) {
+      imageUrl = attachment.url;
     }
-    if (attachment?.url) {
-      return attachment.url;
+
+    if (!imageUrl) return null;
+
+    // If it's a Facebook URL, proxy it through our server to bypass CORS
+    if (imageUrl.includes("facebook.com")) {
+      return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
     }
-    return null;
+
+    return imageUrl;
   };
 
   const openJobModal = (job: JobPost) => {
@@ -771,6 +780,11 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                           alt="Job Post"
                           className="w-20 h-20 rounded-lg object-cover border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => openJobModal(job)}
+                          onError={(e) => {
+                            // Hide the image if it fails to load
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
+                          }}
                         />
                       </div>
                     )}
@@ -979,6 +993,10 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                     src={getAttachmentImage(selectedJob)!}
                     alt="Job Post"
                     className="w-full max-w-md mx-auto rounded-lg shadow-md"
+                    onError={(e) => {
+                      // Hide the image if it fails to load
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
                   />
                 </div>
               )}
