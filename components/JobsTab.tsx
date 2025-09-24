@@ -723,7 +723,7 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
 
             return (
               <div
-                key={job.postId}
+                key={job._id || job.postId}
                 className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-xl hover:border-blue-200 transition-all duration-300 overflow-hidden group"
               >
                 {/* Header with Author Info and Job Type */}

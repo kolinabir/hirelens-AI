@@ -54,6 +54,9 @@ interface EnvConfig {
   // Smyth AI
   smythAiApiKey?: string;
   smythAiAuthToken?: string;
+
+  // Apify API
+  apifyApiToken?: string;
 }
 
 function validateEnvVar(
@@ -168,6 +171,9 @@ export const env: EnvConfig = {
   // Smyth AI
   smythAiApiKey: process.env.SMYTH_AI_API_KEY,
   smythAiAuthToken: process.env.SMYTH_AI_AUTH_TOKEN,
+
+  // Apify API
+  apifyApiToken: process.env.APIFY_API_TOKEN,
 };
 
 // Validate required environment variables on startup

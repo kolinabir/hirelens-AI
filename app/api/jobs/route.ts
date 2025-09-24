@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
 
     // Build filter as a generic record to support dot-notation keys
     const docFilter: Record<string, unknown> = { isDuplicate: { $ne: true } };
+    const orConditions: Record<string, unknown>[] = [];
 
     // Basic filters
     if (filters.groupId) {
@@ -80,44 +81,54 @@ export async function GET(request: NextRequest) {
 
     if (filters.keywords) {
       // Search in multiple fields
-      docFilter["$or"] = [
-        { jobTitle: { $regex: filters.keywords, $options: "i" } },
-        { company: { $regex: filters.keywords, $options: "i" } },
-        { location: { $regex: filters.keywords, $options: "i" } },
-        { content: { $regex: filters.keywords, $options: "i" } },
-        { originalPost: { $regex: filters.keywords, $options: "i" } },
-        { technicalSkills: { $in: [new RegExp(filters.keywords, "i")] } },
-        { "jobDetails.title": { $regex: filters.keywords, $options: "i" } },
-        { "jobDetails.company": { $regex: filters.keywords, $options: "i" } },
-        {
-          "jobDetails.description": { $regex: filters.keywords, $options: "i" },
-        },
-      ];
+      orConditions.push({
+        $or: [
+          { jobTitle: { $regex: filters.keywords, $options: "i" } },
+          { company: { $regex: filters.keywords, $options: "i" } },
+          { location: { $regex: filters.keywords, $options: "i" } },
+          { content: { $regex: filters.keywords, $options: "i" } },
+          { originalPost: { $regex: filters.keywords, $options: "i" } },
+          { technicalSkills: { $in: [new RegExp(filters.keywords, "i")] } },
+          { "jobDetails.title": { $regex: filters.keywords, $options: "i" } },
+          { "jobDetails.company": { $regex: filters.keywords, $options: "i" } },
+          {
+            "jobDetails.description": {
+              $regex: filters.keywords,
+              $options: "i",
+            },
+          },
+        ],
+      });
     }
 
     if (filters.location) {
-      docFilter["$or"] = [
-        ...((docFilter["$or"] as unknown[]) || []),
-        { location: { $regex: filters.location, $options: "i" } },
-        { "jobDetails.location": { $regex: filters.location, $options: "i" } },
-      ];
+      orConditions.push({
+        $or: [
+          { location: { $regex: filters.location, $options: "i" } },
+          {
+            "jobDetails.location": { $regex: filters.location, $options: "i" },
+          },
+        ],
+      });
     }
 
     if (filters.company) {
-      docFilter["$or"] = [
-        ...((docFilter["$or"] as unknown[]) || []),
-        { company: { $regex: filters.company, $options: "i" } },
-        { "jobDetails.company": { $regex: filters.company, $options: "i" } },
-      ];
+      orConditions.push({
+        $or: [
+          { company: { $regex: filters.company, $options: "i" } },
+          { "jobDetails.company": { $regex: filters.company, $options: "i" } },
+        ],
+      });
     }
 
     // Employment & Experience filters
     if (filters.jobType && filters.jobType.length > 0) {
-      docFilter["$or"] = [
-        ...((docFilter["$or"] as unknown[]) || []),
-        { employmentType: { $in: filters.jobType } },
-        { "jobDetails.type": { $in: filters.jobType } },
-      ];
+      orConditions.push({
+        $or: [
+          { employmentType: { $in: filters.jobType } },
+          { "jobDetails.type": { $in: filters.jobType } },
+        ],
+      });
     }
 
     if (filters.experienceLevel) {
@@ -133,23 +144,25 @@ export async function GET(request: NextRequest) {
         const [min, max] = filters.salaryRange
           .split("-")
           .map((s) => parseInt(s));
-        docFilter["$or"] = [
-          ...((docFilter["$or"] as unknown[]) || []),
-          { salary: { $regex: `\\b(${min}|${max})\\b`, $options: "i" } },
-          {
-            "jobDetails.salary": {
-              $regex: `\\b(${min}|${max})\\b`,
-              $options: "i",
+        orConditions.push({
+          $or: [
+            { salary: { $regex: `\\b(${min}|${max})\\b`, $options: "i" } },
+            {
+              "jobDetails.salary": {
+                $regex: `\\b(${min}|${max})\\b`,
+                $options: "i",
+              },
             },
-          },
-        ];
+          ],
+        });
       } else if (filters.salaryRange.includes("+")) {
         const min = parseInt(filters.salaryRange.replace("+", ""));
-        docFilter["$or"] = [
-          ...((docFilter["$or"] as unknown[]) || []),
-          { salary: { $regex: `\\b${min}\\b`, $options: "i" } },
-          { "jobDetails.salary": { $regex: `\\b${min}\\b`, $options: "i" } },
-        ];
+        orConditions.push({
+          $or: [
+            { salary: { $regex: `\\b${min}\\b`, $options: "i" } },
+            { "jobDetails.salary": { $regex: `\\b${min}\\b`, $options: "i" } },
+          ],
+        });
       }
     }
 
@@ -163,13 +176,14 @@ export async function GET(request: NextRequest) {
           ? "hybrid"
           : filters.workType;
 
-      docFilter["$or"] = [
-        ...((docFilter["$or"] as unknown[]) || []),
-        { content: { $regex: workTypeRegex, $options: "i" } },
-        { originalPost: { $regex: workTypeRegex, $options: "i" } },
-        { remoteOption: filters.workType === "remote" },
-        { onsiteRequired: filters.workType === "onsite" },
-      ];
+      orConditions.push({
+        $or: [
+          { content: { $regex: workTypeRegex, $options: "i" } },
+          { originalPost: { $regex: workTypeRegex, $options: "i" } },
+          { remoteOption: filters.workType === "remote" },
+          { onsiteRequired: filters.workType === "onsite" },
+        ],
+      });
     }
 
     // Skills filter
@@ -177,24 +191,38 @@ export async function GET(request: NextRequest) {
       const skillsArray = filters.skills
         .split(",")
         .map((skill) => skill.trim());
-      docFilter["$or"] = [
-        ...((docFilter["$or"] as unknown[]) || []),
-        {
-          technicalSkills: {
-            $in: skillsArray.map((skill) => new RegExp(skill, "i")),
+      orConditions.push({
+        $or: [
+          {
+            technicalSkills: {
+              $in: skillsArray.map((skill) => new RegExp(skill, "i")),
+            },
           },
-        },
-        {
-          softSkills: {
-            $in: skillsArray.map((skill) => new RegExp(skill, "i")),
+          {
+            softSkills: {
+              $in: skillsArray.map((skill) => new RegExp(skill, "i")),
+            },
           },
-        },
-        {
-          "jobDetails.requirements": {
-            $in: skillsArray.map((skill) => new RegExp(skill, "i")),
+          {
+            "jobDetails.requirements": {
+              $in: skillsArray.map((skill) => new RegExp(skill, "i")),
+            },
           },
-        },
-      ];
+          // Also search in content for skills
+          {
+            content: {
+              $regex: skillsArray.join("|"),
+              $options: "i",
+            },
+          },
+          {
+            originalPost: {
+              $regex: skillsArray.join("|"),
+              $options: "i",
+            },
+          },
+        ],
+      });
     }
 
     // Date range filter
@@ -311,6 +339,17 @@ export async function GET(request: NextRequest) {
           ? { extractedAt: sortDirection, scrapedAt: sortDirection }
           : { scrapedAt: sortDirection };
         break;
+    }
+
+    // Combine all OR conditions with AND logic
+    if (orConditions.length > 0) {
+      if (orConditions.length === 1) {
+        // If only one OR condition, merge it directly
+        Object.assign(docFilter, orConditions[0]);
+      } else {
+        // If multiple OR conditions, combine them with $and
+        docFilter["$and"] = orConditions;
+      }
     }
 
     const collection = dbConnection.getJobsCollection();
