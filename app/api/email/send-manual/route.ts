@@ -4,6 +4,81 @@ import { sendJobDigestEmail } from "@/lib/mailer";
 import { ObjectId } from "mongodb";
 import { apiLogger } from "@/lib/logger";
 
+/**
+ * @swagger
+ * /api/email/send-manual:
+ *   post:
+ *     summary: Send manual job digest email
+ *     description: Send a job digest email to a specific subscriber with selected job posts. This allows for targeted email campaigns with curated job selections.
+ *     tags: [Email]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - subscriberEmail
+ *               - jobIds
+ *             properties:
+ *               subscriberEmail:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address of the subscriber
+ *                 example: "user@example.com"
+ *               jobIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of job MongoDB ObjectIds to include in the email
+ *                 example: ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
+ *     responses:
+ *       200:
+ *         description: Email sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     emailSent:
+ *                       type: boolean
+ *                       example: true
+ *                     jobsSent:
+ *                       type: number
+ *                       description: Number of jobs included in the email
+ *                       example: 5
+ *                     subscriberEmail:
+ *                       type: string
+ *                       format: email
+ *                       example: "user@example.com"
+ *                 message:
+ *                   type: string
+ *                   example: "Manual job digest sent successfully to user@example.com"
+ *       400:
+ *         description: Invalid request data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Subscriber not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

@@ -2,6 +2,94 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnection from "@/lib/database";
 import { sendJobDigestEmail } from "@/lib/mailer";
 
+/**
+ * @swagger
+ * /api/subscribers:
+ *   get:
+ *     summary: Get all email subscribers
+ *     description: Retrieve a list of all email subscribers with their basic information including email, creation date, and last email sent date.
+ *     tags: [Email]
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved subscribers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/EmailSubscriber'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *   post:
+ *     summary: Add new email subscriber
+ *     description: Subscribe a new email address to receive job digest emails. Optionally sends a welcome email with recent job opportunities.
+ *     tags: [Email]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address to subscribe
+ *                 example: "newuser@example.com"
+ *     responses:
+ *       200:
+ *         description: Successfully subscribed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                       example: "newuser@example.com"
+ *                     welcomeSent:
+ *                       type: boolean
+ *                       description: Whether welcome email was sent
+ *                       example: true
+ *                     sentCount:
+ *                       type: number
+ *                       description: Number of jobs included in welcome email
+ *                       example: 10
+ *                 message:
+ *                   type: string
+ *                   example: "Successfully subscribed to job alerts"
+ *       400:
+ *         description: Invalid email or already subscribed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function GET() {
   try {
     await dbConnection.connect();

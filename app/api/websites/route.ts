@@ -2,6 +2,94 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnection from "@/lib/database";
 import type { TrackedWebsite } from "@/types";
 
+/**
+ * @swagger
+ * /api/websites:
+ *   get:
+ *     summary: Get all tracked websites
+ *     description: Retrieve a list of all websites being monitored for job postings, including their status and last scraping information.
+ *     tags: [Websites]
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved tracked websites
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/TrackedWebsite'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *   post:
+ *     summary: Add new website to track
+ *     description: Add a new website to monitor for job postings. The system will periodically scrape the website for new job opportunities.
+ *     tags: [Websites]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - url
+ *               - name
+ *             properties:
+ *               url:
+ *                 type: string
+ *                 format: uri
+ *                 description: Website URL to track
+ *                 example: "https://careers.company.com"
+ *               name:
+ *                 type: string
+ *                 description: Display name for the website
+ *                 example: "Company Careers Page"
+ *               companyName:
+ *                 type: string
+ *                 description: Company name (optional)
+ *                 example: "TechCorp Inc."
+ *               scrapingInterval:
+ *                 type: number
+ *                 description: "Hours between scrapes (default: 24)"
+ *                 example: 24
+ *     responses:
+ *       201:
+ *         description: Website added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/TrackedWebsite'
+ *                 message:
+ *                   type: string
+ *                   example: "Website added successfully"
+ *       400:
+ *         description: Invalid request data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 // GET - List all tracked websites
 export async function GET() {
   try {

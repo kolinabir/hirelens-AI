@@ -5,6 +5,109 @@ import type { JobFilters, PaginatedResponse, JobPost } from "@/types";
 import type { Filter, Sort, SortDirection } from "mongodb";
 import { ObjectId } from "mongodb";
 
+/**
+ * @swagger
+ * /api/jobs:
+ *   get:
+ *     summary: Get jobs with advanced filtering
+ *     description: Retrieve a paginated list of job posts with comprehensive filtering options including keywords, location, company, skills, salary range, work type, and more.
+ *     tags: [Jobs]
+ *     parameters:
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *       - $ref: '#/components/parameters/KeywordsParam'
+ *       - $ref: '#/components/parameters/LocationParam'
+ *       - $ref: '#/components/parameters/CompanyParam'
+ *       - $ref: '#/components/parameters/SkillsParam'
+ *       - name: groupId
+ *         in: query
+ *         description: Filter by specific Facebook group ID
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - name: jobType
+ *         in: query
+ *         description: Employment type filter (comma-separated)
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: "full-time,part-time"
+ *       - name: salaryRange
+ *         in: query
+ *         description: Salary range filter
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: "50000-80000"
+ *       - name: workType
+ *         in: query
+ *         description: Work arrangement type
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [remote, onsite, hybrid]
+ *       - name: sortBy
+ *         in: query
+ *         description: Sort field
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [date, engagement, relevance, title, company, likes]
+ *           default: date
+ *       - name: sortOrder
+ *         in: query
+ *         description: Sort order
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *       - name: isProcessed
+ *         in: query
+ *         description: Filter by processing status
+ *         required: false
+ *         schema:
+ *           type: boolean
+ *       - name: structuredOnly
+ *         in: query
+ *         description: Only return jobs with structured data
+ *         required: false
+ *         schema:
+ *           type: boolean
+ *       - name: fromDate
+ *         in: query
+ *         description: Filter jobs from this date (ISO format)
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - name: toDate
+ *         in: query
+ *         description: Filter jobs until this date (ISO format)
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved jobs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PaginatedResponse'
+ *       400:
+ *         description: Invalid query parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function GET(request: NextRequest) {
   try {
     await dbConnection.connect();
