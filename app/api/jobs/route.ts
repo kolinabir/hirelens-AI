@@ -3,6 +3,7 @@ import { dbConnection } from "@/lib/database";
 import { apiLogger } from "@/lib/logger";
 import type { JobFilters, PaginatedResponse, JobPost } from "@/types";
 import type { Filter, Sort, SortDirection } from "mongodb";
+import { ObjectId } from "mongodb";
 
 export async function GET(request: NextRequest) {
   try {
@@ -360,31 +361,42 @@ export async function DELETE(request: NextRequest) {
     await dbConnection.connect();
 
     const { searchParams } = new URL(request.url);
-    const postId = searchParams.get("id");
+    const id = searchParams.get("id");
+    const postId = searchParams.get("postId");
     const postUrl = searchParams.get("postUrl");
 
-    if (!postId && !postUrl) {
+    if (!id && !postId && !postUrl) {
       return NextResponse.json(
-        { error: "Post ID or postUrl is required" },
+        { error: "ID, Post ID, or postUrl is required" },
         { status: 400 }
       );
     }
 
     const collection = dbConnection.getJobsCollection();
 
-    const deleteFilter: Record<string, unknown> = postUrl
-      ? { postUrl }
-      : { postId };
+    let deleteFilter: Record<string, unknown>;
+    let filterDescription: string;
+
+    if (id) {
+      // Delete by MongoDB _id
+      deleteFilter = { _id: new ObjectId(id) };
+      filterDescription = `MongoDB _id: ${id}`;
+    } else if (postUrl) {
+      // Delete by postUrl
+      deleteFilter = { postUrl };
+      filterDescription = `postUrl: ${postUrl}`;
+    } else {
+      // Delete by postId
+      deleteFilter = { postId };
+      filterDescription = `postId: ${postId}`;
+    }
+
     const deletedResult = await collection.deleteOne(
       deleteFilter as Filter<JobPost>
     );
 
     if (deletedResult.deletedCount && deletedResult.deletedCount > 0) {
-      apiLogger.info(
-        `🗑️ Deleted job post by ${postUrl ? "postUrl" : "postId"}: ${
-          postUrl || postId
-        }`
-      );
+      apiLogger.info(`🗑️ Deleted job post by ${filterDescription}`);
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json(
