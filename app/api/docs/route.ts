@@ -92,7 +92,7 @@ export async function GET() {
       <p style="margin: 0; font-size: 14px;">Please wait while we load the interactive documentation.</p>
     </div>
   </div>
-  
+
   <style>
     @keyframes spin {
       0% { transform: rotate(0deg); }
@@ -107,7 +107,7 @@ export async function GET() {
     function initSwagger() {
       try {
         if (typeof SwaggerUIBundle === 'undefined') {
-          document.getElementById('swagger-ui').innerHTML = 
+          document.getElementById('swagger-ui').innerHTML =
             '<div style="padding: 40px; text-align: center; color: #666;">' +
             '<h3>Loading API Documentation...</h3>' +
             '<p>If this message persists, please try refreshing the page.</p>' +
@@ -148,7 +148,7 @@ export async function GET() {
           },
           onFailure: function(error) {
             console.error('Swagger UI failed to load:', error);
-            document.getElementById('swagger-ui').innerHTML = 
+            document.getElementById('swagger-ui').innerHTML =
               '<div style="padding: 40px; text-align: center; color: #dc2626;">' +
               '<h3>Failed to Load API Documentation</h3>' +
               '<p>There was an error loading the Swagger UI. Please try refreshing the page.</p>' +
@@ -159,7 +159,7 @@ export async function GET() {
         });
       } catch (error) {
         console.error('Error initializing Swagger UI:', error);
-        document.getElementById('swagger-ui').innerHTML = 
+        document.getElementById('swagger-ui').innerHTML =
           '<div style="padding: 40px; text-align: center; color: #dc2626;">' +
           '<h3>Error Loading Documentation</h3>' +
           '<p>Failed to initialize Swagger UI. Please check your internet connection and try again.</p>' +
@@ -175,7 +175,7 @@ export async function GET() {
     } else {
       initSwagger();
     }
-    
+
     // Fallback initialization
     window.onload = function() {
       setTimeout(initSwagger, 1000);
@@ -188,8 +188,8 @@ export async function GET() {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-cache, no-store, must-revalidate",
-      "Pragma": "no-cache",
-      "Expires": "0",
+      Pragma: "no-cache",
+      Expires: "0",
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
       "X-XSS-Protection": "1; mode=block",
