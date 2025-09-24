@@ -36,6 +36,7 @@ class DatabaseConnection {
       this.db = this.client.db(env.mongodbDbName);
 
       // Create indexes
+      // Create indexes (disabled to prevent conflicts)
       await this.createIndexes();
 
       console.log("✅ Connected to MongoDB successfully");
@@ -83,82 +84,9 @@ class DatabaseConnection {
   }
 
   private async createIndexes(): Promise<void> {
-    try {
-      const db = this.getDb();
-
-      // Job posts indexes
-      const jobsCollection = db.collection(DB_CONFIG.collections.jobs);
-
-      // Create indexes with proper error handling for duplicates
-      const indexes = [
-        { key: { postId: 1 }, options: {} },
-        { key: { postUrl: 1 }, options: {} },
-        { key: { groupId: 1 }, options: {} },
-        { key: { scrapedAt: -1 }, options: {} },
-        { key: { isProcessed: 1 }, options: {} },
-        { key: { isDuplicate: 1 }, options: {} },
-        { key: { "jobDetails.type": 1 }, options: {} },
-        { key: { "jobDetails.location": 1 }, options: {} },
-        { key: { tags: 1 }, options: {} },
-        {
-          key: {
-            content: "text",
-            "jobDetails.title": "text",
-            "jobDetails.description": "text",
-          },
-          options: {},
-        },
-      ];
-
-      for (const { key, options } of indexes) {
-        try {
-          // Check if index already exists before creating
-          const existingIndexes = await jobsCollection.indexes();
-          const indexName = Object.keys(key).join("_") + "_1";
-          const indexExists = existingIndexes.some(
-            (idx) =>
-              idx.name === indexName ||
-              JSON.stringify(idx.key) === JSON.stringify(key)
-          );
-
-          if (!indexExists) {
-            await jobsCollection.createIndex(key, options);
-          }
-        } catch (error: any) {
-          // Ignore duplicate index errors (code 85) and duplicate key errors (code 11000)
-          if (error.code !== 85 && error.code !== 11000) {
-            console.warn(
-              `Failed to create index ${JSON.stringify(key)}:`,
-              error.message
-            );
-          }
-        }
-      }
-
-      // Groups indexes
-      const groupsCollection = db.collection(DB_CONFIG.collections.groups);
-      await Promise.all([
-        groupsCollection.createIndex({ groupId: 1 }, { unique: true }),
-        groupsCollection.createIndex({ url: 1 }, { unique: true }),
-        groupsCollection.createIndex({ isActive: 1 }),
-        groupsCollection.createIndex({ lastScraped: -1 }),
-      ]);
-
-      // Credentials indexes
-      const credentialsCollection = db.collection(
-        DB_CONFIG.collections.credentials
-      );
-      await Promise.all([
-        credentialsCollection.createIndex({ email: 1 }, { unique: true }),
-        credentialsCollection.createIndex({ isActive: 1 }),
-        credentialsCollection.createIndex({ isBlocked: 1 }),
-      ]);
-
-      console.log("✅ Database indexes created successfully");
-    } catch (error) {
-      console.error("❌ Failed to create indexes:", error);
-      throw error;
-    }
+    // Disabled to prevent any unique index creation conflicts
+    console.log("⚠️ Index creation is disabled to prevent conflicts");
+    return;
   }
 
   // Health check

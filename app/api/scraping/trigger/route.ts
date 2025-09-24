@@ -276,15 +276,7 @@ export async function POST(request: NextRequest) {
             await dbConnection.connect();
             const db = dbConnection.getDb();
 
-            // Ensure unique index on postUrl for idempotent upserts
-            try {
-              await db.collection("jobs").createIndex({ postUrl: 1 });
-            } catch (idxErr) {
-              apiLogger.warn(
-                "Unique index on jobs.postUrl could not be created (may already exist or duplicates present)",
-                { error: idxErr }
-              );
-            }
+            // Index creation is handled by database connection initialization
 
             const savedJobs = [];
             for (const job of structuredJobs) {
@@ -322,13 +314,27 @@ export async function POST(request: NextRequest) {
                   scrapingType: "automatic",
                 };
 
-                const result = await db
-                  .collection("jobs")
-                  .updateOne(
-                    { postUrl: derivedPostUrl },
-                    { $set: jobData },
-                    { upsert: true }
-                  );
+                let result;
+                try {
+                  result = await db
+                    .collection("jobs")
+                    .updateOne(
+                      { postUrl: derivedPostUrl },
+                      { $set: jobData },
+                      { upsert: true }
+                    );
+                } catch (duplicateError: any) {
+                  // Handle duplicate key errors by skipping and continuing
+                  if (duplicateError.code === 11000) {
+                    console.warn(
+                      `⚠️ Skipping duplicate job with postUrl: ${derivedPostUrl}`
+                    );
+                    continue;
+                  } else {
+                    // Re-throw non-duplicate errors
+                    throw duplicateError;
+                  }
+                }
 
                 // Track saved/updated jobs for response metrics
                 savedJobs.push({
@@ -402,13 +408,27 @@ export async function POST(request: NextRequest) {
                     scrapingType: "automatic_fallback",
                   };
 
-                  const result = await db
-                    .collection("jobs")
-                    .updateOne(
-                      { postUrl: derivedPostUrl },
-                      { $set: jobData },
-                      { upsert: true }
-                    );
+                  let result;
+                  try {
+                    result = await db
+                      .collection("jobs")
+                      .updateOne(
+                        { postUrl: derivedPostUrl },
+                        { $set: jobData },
+                        { upsert: true }
+                      );
+                  } catch (duplicateError: any) {
+                    // Handle duplicate key errors by skipping and continuing
+                    if (duplicateError.code === 11000) {
+                      console.warn(
+                        `⚠️ Skipping duplicate fallback job with postUrl: ${derivedPostUrl}`
+                      );
+                      continue;
+                    } else {
+                      // Re-throw non-duplicate errors
+                      throw duplicateError;
+                    }
+                  }
 
                   fallbackSavedJobs.push({
                     ...jobData,

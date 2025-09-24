@@ -196,13 +196,27 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        const result = await dbConnection
-          .getJobsCollection()
-          .updateOne(
-            { postUrl: finalPostUrl },
-            { $set: jobData },
-            { upsert: true }
-          );
+        let result;
+        try {
+          result = await dbConnection
+            .getJobsCollection()
+            .updateOne(
+              { postUrl: finalPostUrl },
+              { $set: jobData },
+              { upsert: true }
+            );
+        } catch (duplicateError: any) {
+          // Handle duplicate key errors by skipping and continuing
+          if (duplicateError.code === 11000) {
+            console.warn(
+              `⚠️ Skipping duplicate job with postUrl: ${finalPostUrl}`
+            );
+            continue;
+          } else {
+            // Re-throw non-duplicate errors
+            throw duplicateError;
+          }
+        }
 
         savedJobs.push({
           ...jobData,

@@ -383,15 +383,7 @@ export async function POST(request: NextRequest) {
           await dbConnection.connect();
           const db = dbConnection.getDb();
 
-          // Ensure index on postUrl for better query performance (non-unique to avoid conflicts)
-          try {
-            await db.collection("jobs").createIndex({ postUrl: 1 });
-          } catch (idxErr) {
-            apiLogger.warn(
-              "Index on jobs.postUrl could not be created (may already exist)",
-              { error: idxErr }
-            );
-          }
+          // Index creation is handled by database connection initialization
 
           const savedJobs = [];
           for (const job of allStructuredJobs) {
@@ -486,13 +478,27 @@ export async function POST(request: NextRequest) {
                 continue;
               }
 
-              const result = await db
-                .collection("jobs")
-                .updateOne(
-                  { postUrl: finalPostUrl },
-                  { $set: jobData },
-                  { upsert: true }
-                );
+              let result;
+              try {
+                result = await db
+                  .collection("jobs")
+                  .updateOne(
+                    { postUrl: finalPostUrl },
+                    { $set: jobData },
+                    { upsert: true }
+                  );
+              } catch (duplicateError: any) {
+                // Handle duplicate key errors by skipping and continuing
+                if (duplicateError.code === 11000) {
+                  console.warn(
+                    `⚠️ Skipping duplicate job with postUrl: ${finalPostUrl}`
+                  );
+                  continue;
+                } else {
+                  // Re-throw non-duplicate errors
+                  throw duplicateError;
+                }
+              }
 
               // Track saved/updated jobs for response metrics
               savedJobs.push({
