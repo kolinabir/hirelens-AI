@@ -192,7 +192,9 @@ export async function POST(request: NextRequest) {
     };
 
     // Scrape with Apify (async run with 60s timeout and abort)
-    apiLogger.info("Starting async Apify run with 60s timeout", { groupUrls: validUrls });
+    apiLogger.info("Starting async Apify run with 60s timeout", {
+      groupUrls: validUrls,
+    });
     const { runId } = await apifyService.startScraping(config);
     const maxDurationMs = 60_000;
     const pollIntervalMs = 3_000;
@@ -215,7 +217,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!["SUCCEEDED", "FAILED", "ABORTED"].includes(lastStatus)) {
-      apiLogger.info("Max runtime reached, aborting run via abort API", { runId });
+      apiLogger.info("Max runtime reached, aborting run via abort API", {
+        runId,
+      });
       try {
         const res = await fetch("http://localhost:3000/api/scraping/abort", {
           method: "POST",
@@ -314,117 +318,201 @@ export async function POST(request: NextRequest) {
       status: lastStatus,
     };
 
-  // Step 2: Process posts through external AI job filtering
-  if (Array.isArray(posts) && posts.length > 0) {
+    // Step 2: Process each post individually through external AI job filtering
+    if (Array.isArray(posts) && posts.length > 0) {
       try {
         console.log(
-          "🔄 Processing scraped posts through external AI job filtering..."
+          `🔄 Processing ${posts.length} scraped posts individually through external AI job filtering...`
         );
 
-        // Convert posts to string format for external API
-  const postsJson = JSON.stringify(posts);
+        const allStructuredJobs = [];
 
-        // Send to external AI for job filtering and structuring
-        const externalFilterResult =
-          await ExternalJobFilterService.filterAndStructureJobs(postsJson);
-
-        if (externalFilterResult.success && externalFilterResult.data) {
-          // Parse and save structured job posts
-          const structuredJobs = ExternalJobFilterService.parseExternalResponse(
-            externalFilterResult.data
+        // Process each post individually
+        for (let i = 0; i < posts.length; i++) {
+          const post = posts[i];
+          console.log(
+            `🔄 Processing post ${i + 1}/${posts.length} by ${
+              post.author?.name || "Unknown"
+            }`
           );
 
-          if (structuredJobs.length > 0) {
-            await dbConnection.connect();
-            const db = dbConnection.getDb();
+          // Convert single post to string format for external API
+          const singlePostJson = JSON.stringify([post]);
 
-            // Ensure unique index on postUrl for idempotent upserts
-            try {
-              await db.collection("jobs").createIndex({ postUrl: 1 }, { unique: true });
-            } catch (idxErr) {
-              apiLogger.warn("Unique index on jobs.postUrl could not be created (may already exist or duplicates present)", { error: idxErr });
+          // Send to external AI for job filtering and structuring
+          const externalFilterResult =
+            await ExternalJobFilterService.filterAndStructureJobs(
+              singlePostJson
+            );
+
+          if (externalFilterResult.success && externalFilterResult.data) {
+            // Parse structured job posts from this individual post
+            const structuredJobs =
+              ExternalJobFilterService.parseExternalResponse(
+                externalFilterResult.data
+              );
+
+            if (structuredJobs.length > 0) {
+              console.log(
+                `✅ Found ${
+                  structuredJobs.length
+                } structured job(s) from post ${i + 1}`
+              );
+              allStructuredJobs.push(...structuredJobs);
+            } else {
+              console.log(`ℹ️ No job data found in post ${i + 1}`);
             }
+          } else {
+            console.warn(
+              `⚠️ External AI processing failed for post ${i + 1}:`,
+              externalFilterResult.error
+            );
+          }
 
-            const savedJobs = [];
-            for (const job of structuredJobs) {
-              try {
-                type StructuredJob = {
-                  postUrl?: string;
-                  attachments?: Array<{ url?: string }>;
-                  facebookUrl?: string;
-                  [key: string]: unknown;
-                };
-                const j = job as StructuredJob;
-                // Derive a stable post URL for uniqueness: prefer job.postUrl, else first attachment url, else facebookUrl
-                const derivedPostUrl: string | undefined =
-                  (typeof j.postUrl === "string" && j.postUrl.trim()) ||
-                  (Array.isArray(j.attachments) && j.attachments[0]?.url) ||
-                  (typeof j.facebookUrl === "string" && j.facebookUrl.trim()) ||
-                  undefined;
+          // Add small delay between API calls to avoid rate limiting
+          if (i < posts.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+        }
 
-                if (!derivedPostUrl) {
-                  // Skip if we cannot determine a unique post URL
-                  apiLogger.warn("Skipping structured job without resolvable postUrl", { jobSample: j });
-                  continue;
-                }
+        console.log(
+          `🎯 Total structured jobs found: ${allStructuredJobs.length}`
+        );
 
-                const jobData = {
-                  ...job,
-                  postUrl: derivedPostUrl,
-                  source: "facebook_scraping_external_ai",
-                  extractedAt: new Date(),
-                  processingVersion: "external_ai_v1",
-                  originalPostsCount: posts.length,
-                };
+        if (allStructuredJobs.length > 0) {
+          await dbConnection.connect();
+          const db = dbConnection.getDb();
 
-                const result = await db.collection("jobs").updateOne(
-                  { postUrl: derivedPostUrl },
+          // Ensure unique index on postUrl for idempotent upserts
+          try {
+            await db
+              .collection("jobs")
+              .createIndex({ postUrl: 1 }, { unique: true });
+          } catch (idxErr) {
+            apiLogger.warn(
+              "Unique index on jobs.postUrl could not be created (may already exist or duplicates present)",
+              { error: idxErr }
+            );
+          }
+
+          const savedJobs = [];
+          for (const job of allStructuredJobs) {
+            try {
+              type StructuredJob = {
+                postUrl?: string;
+                attachments?: Array<{ url?: string }>;
+                facebookUrl?: string;
+                [key: string]: unknown;
+              };
+              const j = job as StructuredJob;
+              // Derive a stable post URL for uniqueness: prefer job.postUrl, else first attachment url, else facebookUrl
+              // If none available, create a unique identifier from user and content
+              const derivedPostUrl: string | undefined =
+                (typeof j.postUrl === "string" && j.postUrl.trim()) ||
+                (Array.isArray(j.attachments) && j.attachments[0]?.url) ||
+                (typeof j.facebookUrl === "string" && j.facebookUrl.trim()) ||
+                undefined;
+
+              let finalPostUrl: string;
+              if (derivedPostUrl) {
+                finalPostUrl = derivedPostUrl;
+              } else {
+                // Create a unique identifier from available data
+                const userInfo =
+                  (j as any).user?.id || (j as any).user?.name || "unknown";
+                const contentHash = (j as any).originalPost
+                  ? (j as any).originalPost
+                      .substring(0, 50)
+                      .replace(/[^a-zA-Z0-9]/g, "")
+                  : "no-content";
+                const timestamp = Date.now();
+                finalPostUrl = `generated://${userInfo}/${contentHash}/${timestamp}`;
+                console.log(`Generated postUrl for Apify job: ${finalPostUrl}`);
+              }
+
+              const jobData = {
+                ...job,
+                postUrl: finalPostUrl,
+                source: "facebook_scraping_external_ai",
+                extractedAt: new Date(),
+                processingVersion: "external_ai_v1",
+                originalPostsCount: posts.length,
+                // Add required fields for dashboard compatibility
+                postId: (j as any).user?.id || `apify-${Date.now()}`,
+                groupId: "facebook-apify",
+                groupName: "Facebook Group (Apify + External AI)",
+                content:
+                  (j as any).originalPost ||
+                  "Job post scraped via Apify and processed by external AI",
+                author: {
+                  name: (j as any).user?.name || "Unknown Author",
+                  profileUrl: (j as any).facebookUrl || "#",
+                  profileImage: undefined,
+                },
+                postedDate: new Date(),
+                engagementMetrics: {
+                  likes: (j as any).likesCount || 0,
+                  comments: (j as any).commentsCount || 0,
+                  shares: 0,
+                },
+                jobDetails: {
+                  title: (j as any).jobTitle,
+                  company: (j as any).company,
+                  location: (j as any).location,
+                  salary: (j as any).salary,
+                  type: (j as any).employmentType as any,
+                  description: (j as any).jobSummary,
+                  requirements: (j as any).technicalSkills || [],
+                  contactInfo: (j as any).howToApply,
+                },
+                scrapedAt: new Date(),
+                isProcessed: true,
+                isDuplicate: false,
+                tags: (j as any).technicalSkills || [],
+              };
+
+              const result = await db
+                .collection("jobs")
+                .updateOne(
+                  { postUrl: finalPostUrl },
                   { $set: jobData },
                   { upsert: true }
                 );
 
-                // Track saved/updated jobs for response metrics
-                savedJobs.push({
-                  ...jobData,
-                  _id: result.upsertedId ?? undefined,
-                  _op: result.upsertedId ? "upserted" : result.modifiedCount > 0 ? "updated" : "unchanged",
-                });
-              } catch (dbError) {
-                console.error(
-                  "❌ Error saving structured job to database:",
-                  dbError
-                );
-              }
+              // Track saved/updated jobs for response metrics
+              savedJobs.push({
+                ...jobData,
+                _id: result.upsertedId ?? undefined,
+                _op: result.upsertedId
+                  ? "upserted"
+                  : result.modifiedCount > 0
+                  ? "updated"
+                  : "unchanged",
+              });
+            } catch (dbError) {
+              console.error(
+                "❌ Error saving structured job to database:",
+                dbError
+              );
             }
-
-            // Add job extraction results to response
-            responseData.jobExtraction = {
-              success: true,
-              structuredJobsFound: structuredJobs.length,
-              savedJobs: savedJobs.length,
-              processingMethod: "external_ai",
-            };
-
-            console.log(
-              `✅ Successfully processed ${savedJobs.length} structured jobs from external AI`
-            );
-          } else {
-            responseData.jobExtraction = {
-              success: true,
-              structuredJobsFound: 0,
-              message: "No job posts identified by external AI",
-            };
           }
-        } else {
-          console.warn(
-            "⚠️ External AI job filtering failed:",
-            externalFilterResult.error
-          );
+
+          // Add job extraction results to response
           responseData.jobExtraction = {
-            success: false,
-            error: externalFilterResult.error,
-            fallback:
-              "External AI unavailable - posts saved without job structuring",
+            success: true,
+            structuredJobsFound: allStructuredJobs.length,
+            savedJobs: savedJobs.length,
+            processingMethod: "external_ai",
+          };
+
+          console.log(
+            `✅ Successfully processed ${savedJobs.length} structured jobs from external AI`
+          );
+        } else {
+          responseData.jobExtraction = {
+            success: true,
+            structuredJobsFound: 0,
+            message: "No job posts identified by external AI",
           };
         }
       } catch (jobProcessingError) {

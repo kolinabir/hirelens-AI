@@ -15,11 +15,10 @@ interface StructuredJobPost {
 
 export class ExternalJobFilterService {
   private static readonly API_BASE_URL =
-    process.env.EXTERNAL_JOB_FILTER_API_URL || 
+    process.env.EXTERNAL_JOB_FILTER_API_URL ||
     "https://cmfwyhx1d1rtsjxgteybbbnme.agent.a.smyth.ai";
-  private static readonly EXTRACT_ENDPOINT = 
-    process.env.EXTERNAL_JOB_FILTER_ENDPOINT || 
-    "/api/extract_job_posts";
+  private static readonly EXTRACT_ENDPOINT =
+    process.env.EXTERNAL_JOB_FILTER_ENDPOINT || "/api/extract_job_posts";
 
   /**
    * Sends job posts to external API for filtering and structuring
@@ -110,26 +109,24 @@ export class ExternalJobFilterService {
       // If it's an object with a data property
       if (apiResponse && typeof apiResponse === "object") {
         const obj = apiResponse as Record<string, unknown>;
-        
 
-        
         // Smyth AI often returns { id, name, result: { Output: { jobData: [...] } } }
         const result = obj.result as Record<string, unknown> | undefined;
         const output = result?.Output as Record<string, unknown> | undefined;
-        
+
         // Try different possible paths for job data
         let jobData = output?.jobData as unknown;
-        
+
         // If jobData is not found, try the Output object itself
         if (!jobData && output) {
           jobData = output;
         }
-        
+
         // If still not found, try the result object itself
         if (!jobData && result) {
           jobData = result;
         }
-        
+
         if (Array.isArray(jobData)) {
           return jobData as StructuredJobPost[];
         }
@@ -141,7 +138,18 @@ export class ExternalJobFilterService {
               : [parsedJobData as StructuredJobPost];
           } catch {}
         }
-        
+
+        // If jobData is an object (single job), wrap it in an array
+        // This handles the case where Smyth AI returns a single job object instead of array
+        if (jobData && typeof jobData === "object" && !Array.isArray(jobData)) {
+          // Check if it looks like a job object (has common job fields)
+          const jobObj = jobData as Record<string, unknown>;
+          if (jobObj.jobTitle || jobObj.company || jobObj.originalPost) {
+            console.log("🔄 Converting single job object to array");
+            return [jobData as StructuredJobPost];
+          }
+        }
+
         // Try other common response formats
         if (Array.isArray(obj.data)) {
           return obj.data as StructuredJobPost[];
@@ -152,12 +160,7 @@ export class ExternalJobFilterService {
         if (Array.isArray(obj.result)) {
           return obj.result as StructuredJobPost[];
         }
-        
-        // If jobData is an object (single job), wrap it in an array
-        if (jobData && typeof jobData === "object" && !Array.isArray(jobData)) {
-          return [jobData as StructuredJobPost];
-        }
-        
+
         // Return the object itself as a single item array
         return [obj as StructuredJobPost];
       }

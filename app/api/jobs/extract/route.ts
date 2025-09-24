@@ -8,31 +8,32 @@ import dbConnection from "@/lib/database";
  * Extracts structured job information from Facebook posts using external AI service
  *
  * @description Processes scraped job posts through external Smyth AI for filtering and structuring, then saves to database
- * @body { "posts": "string containing JSON array of posts" }
+ * @body { "postsText": "string containing JSON array of posts" }
  * @returns Array of extracted and structured job posts
  */
 export async function POST(request: NextRequest) {
   try {
-    const { posts } = await request.json();
+    const body = await request.json();
+    const postsText = body.postsText || body.posts; // Support both formats
 
-    if (!posts || typeof posts !== "string") {
+    if (!postsText || typeof postsText !== "string") {
       return NextResponse.json(
         {
           error:
-            'Invalid input. Expected "posts" field with string containing JSON array.',
+            'Invalid input. Expected "postsText" field with string containing JSON array.',
         },
         { status: 400 }
       );
     }
 
-    // Validate that posts is a valid JSON array and not empty
+    // Validate that postsText is a valid JSON array and not empty
     let parsedPosts: unknown;
     try {
-      parsedPosts = JSON.parse(posts);
+      parsedPosts = JSON.parse(postsText);
     } catch {
       return NextResponse.json(
         {
-          error: 'Invalid JSON in "posts". Expected a JSON array string.',
+          error: 'Invalid JSON in "postsText". Expected a JSON array string.',
         },
         { status: 400 }
       );
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     if (!Array.isArray(parsedPosts)) {
       return NextResponse.json(
         {
-          error: 'Invalid input. "posts" must be a JSON array string.',
+          error: 'Invalid input. "postsText" must be a JSON array string.',
         },
         { status: 400 }
       );
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
     console.log("🔄 Starting job extraction and filtering process...");
 
     // Step 1: Local extraction using existing JobPostExtractor
-    const localExtractedJobs = JobPostExtractor.extractJobPosts(posts);
+    const localExtractedJobs = JobPostExtractor.extractJobPosts(postsText);
     console.log(
       `✅ Local extraction completed: ${localExtractedJobs.length} jobs found`
     );
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
     // Step 2: Send to external API for advanced filtering and structuring
     console.log("🔄 Sending jobs to external AI for advanced filtering...");
     const externalFilterResult =
-      await ExternalJobFilterService.filterAndStructureJobs(posts);
+      await ExternalJobFilterService.filterAndStructureJobs(postsText);
 
     if (!externalFilterResult.success) {
       console.warn(
@@ -120,38 +121,83 @@ export async function POST(request: NextRequest) {
           [key: string]: unknown;
         };
         const j = job as StructuredJob;
-        
+
         // Derive a stable post URL for uniqueness: prefer job.postUrl, else first attachment url, else facebookUrl
+        // If none available, create a unique identifier from user and content
         const derivedPostUrl: string | undefined =
           (typeof j.postUrl === "string" && j.postUrl.trim()) ||
           (Array.isArray(j.attachments) && j.attachments[0]?.url) ||
           (typeof j.facebookUrl === "string" && j.facebookUrl.trim()) ||
           undefined;
 
-        if (!derivedPostUrl) {
-          // Skip if we cannot determine a unique post URL
-          console.warn("Skipping structured job without resolvable postUrl", { jobSample: j });
-          continue;
+        let finalPostUrl: string;
+        if (derivedPostUrl) {
+          finalPostUrl = derivedPostUrl;
+        } else {
+          // Create a unique identifier from available data
+          const userInfo = j.user?.id || j.user?.name || "unknown";
+          const contentHash = j.originalPost
+            ? j.originalPost.substring(0, 50).replace(/[^a-zA-Z0-9]/g, "")
+            : "no-content";
+          const timestamp = Date.now();
+          finalPostUrl = `generated://${userInfo}/${contentHash}/${timestamp}`;
+          console.log(`Generated postUrl for job: ${finalPostUrl}`);
         }
 
         const jobData = {
           ...job,
-          postUrl: derivedPostUrl,
+          postUrl: finalPostUrl,
           source: "facebook_external_ai",
           extractedAt: new Date(),
           processingVersion: "external_ai_v1",
+          // Add required fields for dashboard compatibility
+          postId: j.user?.id || `generated-${Date.now()}`,
+          groupId: "facebook-external",
+          groupName: "Facebook Group (External AI)",
+          content: j.originalPost || "Job post extracted via external AI",
+          author: {
+            name: j.user?.name || "Unknown Author",
+            profileUrl: j.facebookUrl || "#",
+            profileImage: undefined,
+          },
+          postedDate: new Date(),
+          engagementMetrics: {
+            likes: j.likesCount || 0,
+            comments: j.commentsCount || 0,
+            shares: 0,
+          },
+          jobDetails: {
+            title: j.jobTitle,
+            company: j.company,
+            location: j.location,
+            salary: j.salary,
+            type: j.employmentType as any,
+            description: j.jobSummary,
+            requirements: j.technicalSkills || [],
+            contactInfo: j.howToApply,
+          },
+          scrapedAt: new Date(),
+          isProcessed: true,
+          isDuplicate: false,
+          tags: j.technicalSkills || [],
         };
 
-        const result = await dbConnection.getJobsCollection().updateOne(
-          { postUrl: derivedPostUrl },
-          { $set: jobData },
-          { upsert: true }
-        );
+        const result = await dbConnection
+          .getJobsCollection()
+          .updateOne(
+            { postUrl: finalPostUrl },
+            { $set: jobData },
+            { upsert: true }
+          );
 
         savedJobs.push({
           ...jobData,
           _id: result.upsertedId ?? undefined,
-          _op: result.upsertedId ? "upserted" : result.modifiedCount > 0 ? "updated" : "unchanged",
+          _op: result.upsertedId
+            ? "upserted"
+            : result.modifiedCount > 0
+            ? "updated"
+            : "unchanged",
         });
       } catch (dbError) {
         console.error("❌ Error saving job to database:", dbError);
