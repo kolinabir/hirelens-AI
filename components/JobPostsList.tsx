@@ -17,13 +17,13 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
     .filter((job) => {
       if (!filter) return true;
       const searchText = filter.toLowerCase();
-      
+
       // Support both old and new job structures
       const authorName = job.user?.name || job.author?.name || '';
       const jobTitle = job.jobTitle || job.jobDetails?.title || '';
       const company = job.company || job.jobDetails?.company || '';
       const content = job.originalPost || job.content || '';
-      
+
       return (
         content.toLowerCase().includes(searchText) ||
         authorName.toLowerCase().includes(searchText) ||
@@ -38,9 +38,9 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
         const bDate = b.extractedAt || b.postedDate;
         return new Date(bDate).getTime() - new Date(aDate).getTime();
       } else {
-        const aEngagement = (a.likesCount || a.engagementMetrics?.likes || 0) + 
+        const aEngagement = (a.likesCount || a.engagementMetrics?.likes || 0) +
                            (a.commentsCount || a.engagementMetrics?.comments || 0);
-        const bEngagement = (b.likesCount || b.engagementMetrics?.likes || 0) + 
+        const bEngagement = (b.likesCount || b.engagementMetrics?.likes || 0) +
                            (b.commentsCount || b.engagementMetrics?.comments || 0);
         return bEngagement - aEngagement;
       }
@@ -60,7 +60,7 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
     const now = new Date();
     const postDate = new Date(date);
     const diffInHours = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return "Just now";
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
@@ -74,18 +74,18 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
 
   const getProfileImageUrl = (job: JobPost) => {
     // Try to get profile image from various sources
-    return job.author?.profileImage || 
+    return job.author?.profileImage ||
            (job.apifyData?.user?.id ? `https://graph.facebook.com/${job.apifyData.user.id}/picture?type=large` : null);
   };
 
   const getProfileUrl = (job: JobPost) => {
-    return job.author?.profileUrl || 
+    return job.author?.profileUrl ||
            (job.apifyData?.user?.id ? `https://facebook.com/${job.apifyData.user.id}` : null);
   };
 
   const getPostUrl = (job: JobPost) => {
-    return job.postUrl || 
-           job.facebookUrl || 
+    return job.postUrl ||
+           job.facebookUrl ||
            job.apifyData?.facebookUrl ||
            null;
   };
@@ -136,7 +136,7 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
           filteredJobs.map((job) => {
             // Determine if this is a structured job
             const isStructured = !!job.postUrl && !!job.extractedAt;
-            
+
             // Get display values for both old and new structures
             const displayName = job.user?.name || job.author?.name || 'Unknown User';
             const displayTitle = job.jobTitle || job.jobDetails?.title || 'Job Post';
@@ -149,7 +149,7 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
             const displayShares = job.engagementMetrics?.shares || 0;
             const displaySalary = job.salary || job.jobDetails?.salary;
             const displayType = job.employmentType || job.jobDetails?.type;
-            
+
             const profileImageUrl = getProfileImageUrl(job);
             const profileUrl = getProfileUrl(job);
             const postUrl = getPostUrl(job);
@@ -218,13 +218,13 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
                           <span>•</span>
                           <span>{formatRelativeTime(displayDate)}</span>
                           <span>•</span>
-                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                          {/* <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
                             job.source === "apify"
                               ? "bg-blue-50 text-blue-700"
                               : "bg-gray-50 text-gray-700"
                           }`}>
                             {job.source}
-                          </span>
+                          </span> */}
                         </div>
                       </div>
                     </div>

@@ -1015,9 +1015,9 @@ export default function Dashboard() {
                         <span className="font-medium text-gray-900">
                           Scraper
                         </span>
-                        <p className="text-sm text-gray-600">
+                        {/* <p className="text-sm text-gray-600">
                           Apify Web Scraping
-                        </p>
+                        </p> */}
                       </div>
                     </div>
                     <span
