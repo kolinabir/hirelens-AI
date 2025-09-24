@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Facebook Job Scraper - Dashboard",
-  description: "Automated Facebook job scraping and management dashboard",
+  title: "HireLens - AI-Powered Job Discovery",
+  description: "Discover your dream job with HireLens. AI-powered job scraping from Facebook groups with intelligent analysis and professional presentation.",
 };
 
 export default function RootLayout({

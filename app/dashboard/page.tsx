@@ -112,9 +112,9 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
                 <svg
-                  className="w-8 h-8 text-white"
+                  className="w-7 h-7 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -123,16 +123,16 @@ export default function Dashboard() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6.294a7.943 7.943 0 01-2-.294M16 6H8m0 0V4a2 2 0 012-2h4a2 2 0 012 2v2M8 6v10a2 2 0 002 2h4a2 2 0 002-2V6"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Job Scraper Dashboard
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  HireLens Dashboard
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Intelligent Facebook group job scraping with AI processing
+                  AI-powered job discovery from Facebook groups
                 </p>
               </div>
             </div>
