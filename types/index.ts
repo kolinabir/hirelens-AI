@@ -57,7 +57,7 @@ export interface JobPost {
   postUrl?: string; // Unique key for structured jobs
   extractedAt?: Date; // When structured data was extracted
   processingVersion?: string; // e.g., "external_ai_v1"
-  
+
   // Structured job fields from external AI processing
   jobTitle?: string;
   originalPost?: string;
@@ -165,18 +165,42 @@ export interface DashboardStats {
 }
 
 export interface JobFilters {
+  // Basic filters
   groupId?: string;
-  dateRange?: {
-    from: Date;
-    to: Date;
-  };
-  jobType?: string[];
-  location?: string;
   keywords?: string;
-  sortBy?: "date" | "engagement" | "relevance";
+  location?: string;
+  company?: string;
+
+  // Employment & Experience
+  jobType?: string[];
+  experienceLevel?: string;
+  salaryRange?: string;
+  workType?: string; // remote, onsite, hybrid
+
+  // Skills & Requirements
+  skills?: string;
+
+  // Date filters
+  dateRange?:
+    | string
+    | {
+        from: Date;
+        to: Date;
+      };
+
+  // Advanced options
+  hasAttachments?: boolean;
+  hasDeadline?: boolean;
+  hasContact?: boolean;
+  highEngagement?: boolean; // Jobs with 10+ likes
+
+  // Sorting & Pagination
+  sortBy?: "date" | "engagement" | "relevance" | "title" | "company" | "likes";
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
+
+  // Quality filter
   structuredOnly?: boolean; // Filter for structured jobs (with postUrl/extractedAt)
 }
 

@@ -12,21 +12,48 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const filters: JobFilters = {
+      // Basic filters
       groupId: searchParams.get("groupId") || undefined,
-      jobType: searchParams.get("jobType")?.split(",") || undefined,
-      location: searchParams.get("location") || undefined,
       keywords: searchParams.get("keywords") || undefined,
+      location: searchParams.get("location") || undefined,
+      company: searchParams.get("company") || undefined,
+
+      // Employment & Experience
+      jobType: searchParams.get("jobType")?.split(",") || undefined,
+      experienceLevel: searchParams.get("experienceLevel") || undefined,
+      salaryRange: searchParams.get("salaryRange") || undefined,
+      workType: searchParams.get("workType") || undefined,
+
+      // Skills & Requirements
+      skills: searchParams.get("skills") || undefined,
+
+      // Date filters
+      dateRange: searchParams.get("dateRange") || undefined,
+
+      // Advanced options
+      hasAttachments: searchParams.get("hasAttachments") === "true",
+      hasDeadline: searchParams.get("hasDeadline") === "true",
+      hasContact: searchParams.get("hasContact") === "true",
+      highEngagement: searchParams.get("highEngagement") === "true",
+
+      // Sorting & Pagination
       sortBy:
-        (searchParams.get("sortBy") as "date" | "engagement" | "relevance") ||
-        "date",
+        (searchParams.get("sortBy") as
+          | "date"
+          | "engagement"
+          | "relevance"
+          | "title"
+          | "company"
+          | "likes") || "date",
       sortOrder: (searchParams.get("sortOrder") as "asc" | "desc") || "desc",
       page: parseInt(searchParams.get("page") || "1"),
       limit: parseInt(searchParams.get("limit") || "20"),
-      structuredOnly:
-        searchParams.get("structuredOnly") === "true" ? true : false,
+
+      // Quality filter
+      structuredOnly: searchParams.get("structuredOnly") === "true",
     };
 
-    // Parse date range
+    // Parse legacy date range format
     const fromDate = searchParams.get("fromDate");
     const toDate = searchParams.get("toDate");
     if (fromDate && toDate) {
@@ -39,37 +66,202 @@ export async function GET(request: NextRequest) {
     // Build filter as a generic record to support dot-notation keys
     const docFilter: Record<string, unknown> = { isDuplicate: { $ne: true } };
 
+    // Basic filters
     if (filters.groupId) {
       docFilter.groupId = filters.groupId;
     }
 
-    if (filters.dateRange) {
-      docFilter.scrapedAt = {
-        $gte: filters.dateRange.from,
-        $lte: filters.dateRange.to,
-      };
-    }
-
-    if (filters.jobType && filters.jobType.length > 0) {
-      docFilter["jobDetails.type"] = { $in: filters.jobType };
+    if (filters.keywords) {
+      // Search in multiple fields
+      docFilter["$or"] = [
+        { jobTitle: { $regex: filters.keywords, $options: "i" } },
+        { company: { $regex: filters.keywords, $options: "i" } },
+        { location: { $regex: filters.keywords, $options: "i" } },
+        { content: { $regex: filters.keywords, $options: "i" } },
+        { originalPost: { $regex: filters.keywords, $options: "i" } },
+        { technicalSkills: { $in: [new RegExp(filters.keywords, "i")] } },
+        { "jobDetails.title": { $regex: filters.keywords, $options: "i" } },
+        { "jobDetails.company": { $regex: filters.keywords, $options: "i" } },
+        {
+          "jobDetails.description": { $regex: filters.keywords, $options: "i" },
+        },
+      ];
     }
 
     if (filters.location) {
-      docFilter["jobDetails.location"] = {
-        $regex: filters.location,
+      docFilter["$or"] = [
+        ...((docFilter["$or"] as any[]) || []),
+        { location: { $regex: filters.location, $options: "i" } },
+        { "jobDetails.location": { $regex: filters.location, $options: "i" } },
+      ];
+    }
+
+    if (filters.company) {
+      docFilter["$or"] = [
+        ...((docFilter["$or"] as any[]) || []),
+        { company: { $regex: filters.company, $options: "i" } },
+        { "jobDetails.company": { $regex: filters.company, $options: "i" } },
+      ];
+    }
+
+    // Employment & Experience filters
+    if (filters.jobType && filters.jobType.length > 0) {
+      docFilter["$or"] = [
+        ...((docFilter["$or"] as any[]) || []),
+        { employmentType: { $in: filters.jobType } },
+        { "jobDetails.type": { $in: filters.jobType } },
+      ];
+    }
+
+    if (filters.experienceLevel) {
+      docFilter["experienceLevel"] = {
+        $regex: filters.experienceLevel,
         $options: "i",
       };
     }
 
-    if (filters.keywords) {
-      docFilter["$text"] = { $search: filters.keywords };
+    if (filters.salaryRange) {
+      // Parse salary range like "30000-50000" or "120000+"
+      if (filters.salaryRange.includes("-")) {
+        const [min, max] = filters.salaryRange
+          .split("-")
+          .map((s) => parseInt(s));
+        docFilter["$or"] = [
+          ...((docFilter["$or"] as any[]) || []),
+          { salary: { $regex: `\\b(${min}|${max})\\b`, $options: "i" } },
+          {
+            "jobDetails.salary": {
+              $regex: `\\b(${min}|${max})\\b`,
+              $options: "i",
+            },
+          },
+        ];
+      } else if (filters.salaryRange.includes("+")) {
+        const min = parseInt(filters.salaryRange.replace("+", ""));
+        docFilter["$or"] = [
+          ...((docFilter["$or"] as any[]) || []),
+          { salary: { $regex: `\\b${min}\\b`, $options: "i" } },
+          { "jobDetails.salary": { $regex: `\\b${min}\\b`, $options: "i" } },
+        ];
+      }
     }
 
-    // Structured-only filter: include docs that have a resolvable postUrl or extractedAt
-    if (filters.structuredOnly) {
+    if (filters.workType) {
+      const workTypeRegex =
+        filters.workType === "remote"
+          ? "remote|work from home|wfh"
+          : filters.workType === "onsite"
+          ? "onsite|office|on-site"
+          : filters.workType === "hybrid"
+          ? "hybrid"
+          : filters.workType;
+
       docFilter["$or"] = [
-        { postUrl: { $exists: true } },
-        { extractedAt: { $exists: true } },
+        ...((docFilter["$or"] as any[]) || []),
+        { content: { $regex: workTypeRegex, $options: "i" } },
+        { originalPost: { $regex: workTypeRegex, $options: "i" } },
+        { remoteOption: filters.workType === "remote" },
+        { onsiteRequired: filters.workType === "onsite" },
+      ];
+    }
+
+    // Skills filter
+    if (filters.skills) {
+      const skillsArray = filters.skills
+        .split(",")
+        .map((skill) => skill.trim());
+      docFilter["$or"] = [
+        ...((docFilter["$or"] as any[]) || []),
+        {
+          technicalSkills: {
+            $in: skillsArray.map((skill) => new RegExp(skill, "i")),
+          },
+        },
+        {
+          softSkills: {
+            $in: skillsArray.map((skill) => new RegExp(skill, "i")),
+          },
+        },
+        {
+          "jobDetails.requirements": {
+            $in: skillsArray.map((skill) => new RegExp(skill, "i")),
+          },
+        },
+      ];
+    }
+
+    // Date range filter
+    if (filters.dateRange) {
+      if (typeof filters.dateRange === "string") {
+        const now = new Date();
+        let startDate: Date;
+
+        switch (filters.dateRange) {
+          case "today":
+            startDate = new Date(
+              now.getFullYear(),
+              now.getMonth(),
+              now.getDate()
+            );
+            break;
+          case "week":
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case "month":
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+          case "3months":
+            startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          default:
+            startDate = new Date(0);
+        }
+
+        docFilter.scrapedAt = { $gte: startDate };
+      } else if (filters.dateRange.from && filters.dateRange.to) {
+        docFilter.scrapedAt = {
+          $gte: filters.dateRange.from,
+          $lte: filters.dateRange.to,
+        };
+      }
+    }
+
+    // Advanced options
+    if (filters.hasAttachments) {
+      docFilter["attachments"] = { $exists: true, $ne: [] };
+    }
+
+    if (filters.hasDeadline) {
+      docFilter["applicationDeadline"] = { $exists: true, $ne: "" };
+    }
+
+    if (filters.hasContact) {
+      docFilter["$or"] = [
+        ...((docFilter["$or"] as any[]) || []),
+        { howToApply: { $exists: true, $ne: "" } },
+        { applicationMethods: { $exists: true, $ne: [] } },
+        { "jobDetails.contactInfo": { $exists: true, $ne: "" } },
+      ];
+    }
+
+    if (filters.highEngagement) {
+      docFilter["$or"] = [
+        ...((docFilter["$or"] as any[]) || []),
+        { likesCount: { $gte: 10 } },
+        { "engagementMetrics.likes": { $gte: 10 } },
+      ];
+    }
+
+    // Structured-only filter
+    if (filters.structuredOnly) {
+      docFilter["$and"] = [
+        ...((docFilter["$and"] as any[]) || []),
+        {
+          $or: [
+            { postUrl: { $exists: true, $ne: "" } },
+            { extractedAt: { $exists: true } },
+          ],
+        },
       ];
     }
 
@@ -80,9 +272,35 @@ export async function GET(request: NextRequest) {
 
     // Sort spec
     const sortDirection: SortDirection = filters.sortOrder === "asc" ? 1 : -1;
-    const sortSpec: Sort = filters.structuredOnly
-      ? { extractedAt: sortDirection, scrapedAt: sortDirection }
-      : { scrapedAt: sortDirection };
+    let sortSpec: Sort = {};
+
+    switch (filters.sortBy) {
+      case "title":
+        sortSpec = {
+          jobTitle: sortDirection,
+          "jobDetails.title": sortDirection,
+        };
+        break;
+      case "company":
+        sortSpec = {
+          company: sortDirection,
+          "jobDetails.company": sortDirection,
+        };
+        break;
+      case "likes":
+      case "engagement":
+        sortSpec = {
+          likesCount: sortDirection,
+          "engagementMetrics.likes": sortDirection,
+        };
+        break;
+      case "date":
+      default:
+        sortSpec = filters.structuredOnly
+          ? { extractedAt: sortDirection, scrapedAt: sortDirection }
+          : { scrapedAt: sortDirection };
+        break;
+    }
 
     const collection = dbConnection.getJobsCollection();
 

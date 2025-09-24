@@ -255,6 +255,7 @@ export default function JobsPage() {
     sortOrder: "desc",
     structuredOnly: false,
   });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   useEffect(() => {
     fetchJobs();
@@ -479,91 +480,435 @@ export default function JobsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Keywords
-              </label>
-              <input
-                type="text"
-                placeholder="Search jobs..."
-                value={filters.keywords || ""}
-                onChange={(e) => handleFilterChange("keywords", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+        {/* Advanced Filters */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+          {/* Filter Header */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg">
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Smart Filters
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Find your perfect job opportunity
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700"
+                >
+                  <svg
+                    className={`w-4 h-4 transition-transform ${
+                      showAdvancedFilters ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                  {showAdvancedFilters ? "Hide" : "Show"} Advanced
+                </button>
+                <button
+                  onClick={() => setFilters({ page: 1, limit: 20 })}
+                  className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                >
+                  Clear All
+                </button>
+              </div>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Job Type
-              </label>
-              <select
-                value={filters.jobType?.[0] || ""}
-                onChange={(e) =>
-                  handleFilterChange(
-                    "jobType",
-                    e.target.value ? [e.target.value] : undefined
-                  )
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Types</option>
-                <option value="full-time">Full Time</option>
-                <option value="part-time">Part Time</option>
-                <option value="contract">Contract</option>
-                <option value="freelance">Freelance</option>
-                <option value="internship">Internship</option>
-              </select>
-            </div>
+          {/* Basic Filters - Always Visible */}
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              {/* Search Keywords */}
+              <div className="lg:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  🔍 Search Keywords
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search by title, company, skills..."
+                    value={filters.keywords || ""}
+                    onChange={(e) =>
+                      handleFilterChange("keywords", e.target.value)
+                    }
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  />
+                  <svg
+                    className="absolute left-3 top-3.5 w-4 h-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location
-              </label>
-              <input
-                type="text"
-                placeholder="Location..."
-                value={filters.location || ""}
-                onChange={(e) => handleFilterChange("location", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+              {/* Quick Sort */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  📊 Sort By
+                </label>
+                <select
+                  value={`${filters.sortBy || "date"}_${
+                    filters.sortOrder || "desc"
+                  }`}
+                  onChange={(e) => {
+                    const [sortBy, sortOrder] = e.target.value.split("_");
+                    handleFilterChange("sortBy", sortBy as any);
+                    handleFilterChange("sortOrder", sortOrder as any);
+                  }}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                >
+                  <option value="date_desc">🕒 Newest First</option>
+                  <option value="date_asc">🕐 Oldest First</option>
+                  <option value="engagement_desc">❤️ Most Popular</option>
+                  <option value="engagement_asc">📊 Least Popular</option>
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sort By
-              </label>
-              <select
-                value={`${filters.sortBy}-${filters.sortOrder}`}
-                onChange={(e) => {
-                  const [sortBy, sortOrder] = e.target.value.split("-");
-                  handleFilterChange("sortBy", sortBy);
-                  handleFilterChange("sortOrder", sortOrder);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="date-desc">Newest First</option>
-                <option value="date-asc">Oldest First</option>
-                <option value="engagement-desc">Most Engagement</option>
-                <option value="engagement-asc">Least Engagement</option>
-              </select>
-            </div>
-
-            <div className="flex items-end">
-              <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!filters.structuredOnly}
+              {/* Job Quality */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  ⭐ Job Quality
+                </label>
+                <select
+                  value={filters.structuredOnly ? "structured" : "all"}
                   onChange={(e) =>
-                    handleFilterChange("structuredOnly", e.target.checked)
+                    handleFilterChange(
+                      "structuredOnly",
+                      e.target.value === "structured"
+                    )
                   }
-                  className="h-4 w-4"
-                />
-                Structured Only
-              </label>
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                >
+                  <option value="all">All Jobs</option>
+                  <option value="structured">✨ AI Processed Only</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Advanced Filters - Collapsible */}
+            {showAdvancedFilters && (
+              <div className="border-t border-gray-100 pt-6 space-y-6">
+                {/* Row 1: Employment & Location */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💼 Employment Type
+                    </label>
+                    <select
+                      value={filters.jobType?.[0] || ""}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "jobType",
+                          e.target.value ? [e.target.value] : undefined
+                        )
+                      }
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">All Employment Types</option>
+                      <option value="Full-Time">👔 Full Time</option>
+                      <option value="Part-Time">⏰ Part Time</option>
+                      <option value="Contract">📋 Contract</option>
+                      <option value="Freelance">🌟 Freelance</option>
+                      <option value="Internship">🎓 Internship</option>
+                      <option value="Remote">🏠 Remote</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📍 Location
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="City, Country or Remote"
+                      value={filters.location || ""}
+                      onChange={(e) =>
+                        handleFilterChange("location", e.target.value)
+                      }
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🏢 Company
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Company name..."
+                      value={filters.company || ""}
+                      onChange={(e) =>
+                        handleFilterChange("company", e.target.value)
+                      }
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: Experience & Salary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🎯 Experience Level
+                    </label>
+                    <select
+                      value={filters.experienceLevel || ""}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "experienceLevel",
+                          e.target.value || undefined
+                        )
+                      }
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">Any Experience</option>
+                      <option value="Entry">🌱 Entry Level</option>
+                      <option value="Junior">👶 Junior (1-2 years)</option>
+                      <option value="Mid">🚀 Mid Level (3-5 years)</option>
+                      <option value="Senior">⭐ Senior (5+ years)</option>
+                      <option value="Lead">👑 Lead/Manager</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💰 Salary Range
+                    </label>
+                    <select
+                      value={filters.salaryRange || ""}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "salaryRange",
+                          e.target.value || undefined
+                        )
+                      }
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">Any Salary</option>
+                      <option value="0-30000">💵 Under 30K BDT</option>
+                      <option value="30000-50000">💸 30K - 50K BDT</option>
+                      <option value="50000-80000">💎 50K - 80K BDT</option>
+                      <option value="80000-120000">🏆 80K - 120K BDT</option>
+                      <option value="120000+">🌟 120K+ BDT</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🌍 Work Type
+                    </label>
+                    <select
+                      value={filters.workType || ""}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "workType",
+                          e.target.value || undefined
+                        )
+                      }
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">Any Work Type</option>
+                      <option value="remote">🏠 Remote</option>
+                      <option value="onsite">🏢 On-site</option>
+                      <option value="hybrid">🔄 Hybrid</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Row 3: Skills & Date Range */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🛠️ Required Skills
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="React, Python, Node.js, etc."
+                      value={filters.skills || ""}
+                      onChange={(e) =>
+                        handleFilterChange("skills", e.target.value)
+                      }
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Separate skills with commas
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📅 Posted Date
+                    </label>
+                    <select
+                      value={filters.dateRange || ""}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "dateRange",
+                          e.target.value || undefined
+                        )
+                      }
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">Any Time</option>
+                      <option value="today">📅 Today</option>
+                      <option value="week">📆 This Week</option>
+                      <option value="month">🗓️ This Month</option>
+                      <option value="3months">📊 Last 3 Months</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Row 4: Advanced Options */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                    🎛️ Advanced Options
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={filters.hasAttachments || false}
+                        onChange={(e) =>
+                          handleFilterChange("hasAttachments", e.target.checked)
+                        }
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm font-medium text-gray-700">
+                        📎 Has Images
+                      </span>
+                    </label>
+
+                    <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-green-50 transition-colors cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={filters.hasDeadline || false}
+                        onChange={(e) =>
+                          handleFilterChange("hasDeadline", e.target.checked)
+                        }
+                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm font-medium text-gray-700">
+                        ⏰ Has Deadline
+                      </span>
+                    </label>
+
+                    <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-purple-50 transition-colors cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={filters.hasContact || false}
+                        onChange={(e) =>
+                          handleFilterChange("hasContact", e.target.checked)
+                        }
+                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm font-medium text-gray-700">
+                        📧 Has Contact
+                      </span>
+                    </label>
+
+                    <label className="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-orange-50 transition-colors cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={filters.highEngagement || false}
+                        onChange={(e) =>
+                          handleFilterChange("highEngagement", e.target.checked)
+                        }
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm font-medium text-gray-700">
+                        🔥 Popular (10+ likes)
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Filter Summary */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="font-medium">
+                  {pagination ? `${pagination.total} jobs found` : "Loading..."}
+                </span>
+                {Object.keys(filters).filter(
+                  (key) =>
+                    key !== "page" &&
+                    key !== "limit" &&
+                    key !== "sortBy" &&
+                    key !== "sortOrder" &&
+                    filters[key as keyof JobFilters] !== undefined &&
+                    filters[key as keyof JobFilters] !== null &&
+                    filters[key as keyof JobFilters] !== "" &&
+                    filters[key as keyof JobFilters] !== false
+                ).length > 0 && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    {
+                      Object.keys(filters).filter(
+                        (key) =>
+                          key !== "page" &&
+                          key !== "limit" &&
+                          key !== "sortBy" &&
+                          key !== "sortOrder" &&
+                          filters[key as keyof JobFilters] !== undefined &&
+                          filters[key as keyof JobFilters] !== null &&
+                          filters[key as keyof JobFilters] !== "" &&
+                          filters[key as keyof JobFilters] !== false
+                      ).length
+                    }{" "}
+                    filters active
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={filters.limit || 20}
+                  onChange={(e) =>
+                    handleFilterChange("limit", parseInt(e.target.value))
+                  }
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={10}>Show 10</option>
+                  <option value={20}>Show 20</option>
+                  <option value={50}>Show 50</option>
+                  <option value={100}>Show 100</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
