@@ -17,5 +17,13 @@ import { swaggerSpec } from '@/lib/swagger';
  *               type: object
  */
 export async function GET() {
-  return NextResponse.json(swaggerSpec);
+  return NextResponse.json(swaggerSpec, {
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=3600", // Cache for 1 hour
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
 }
