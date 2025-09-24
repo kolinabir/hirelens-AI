@@ -602,17 +602,24 @@ export default function Dashboard() {
                     if (e.key === "Enter") {
                       const email = subscribeEmail.trim();
                       if (!email) return;
-                      setSubscribeMsg(null);
+                      setSubscribeMsg("🔄 Subscribing...");
+                      console.log("🔄 Attempting to subscribe:", email);
                       try {
                         const res = await fetch("/api/subscribers", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ email }),
                         });
+                        console.log("📡 Response status:", res.status);
                         const json = await res.json();
+                        console.log("📡 Response data:", json);
                         if (json.success) {
                           setSubscribeMsg(
-                            `📧 Subscribed ${email} to hourly job updates`
+                            `📧 Subscribed ${email} to hourly job updates${
+                              json.data?.welcomeSent
+                                ? ` (welcome email sent with ${json.data.sentCount} jobs)`
+                                : ""
+                            }`
                           );
                           setSubscribeEmail("");
                         } else {
@@ -623,6 +630,7 @@ export default function Dashboard() {
                           );
                         }
                       } catch (err: any) {
+                        console.error("❌ Subscription error:", err);
                         setSubscribeMsg(
                           `❌ Failed to subscribe: ${err?.message || err}`
                         );
@@ -630,6 +638,48 @@ export default function Dashboard() {
                     }
                   }}
                 />
+                <button
+                  onClick={async () => {
+                    const email = subscribeEmail.trim();
+                    if (!email) return;
+                    setSubscribeMsg("🔄 Subscribing...");
+                    console.log("🔄 Attempting to subscribe:", email);
+                    try {
+                      const res = await fetch("/api/subscribers", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email }),
+                      });
+                      console.log("📡 Response status:", res.status);
+                      const json = await res.json();
+                      console.log("📡 Response data:", json);
+                      if (json.success) {
+                        setSubscribeMsg(
+                          `📧 Subscribed ${email} to hourly job updates${
+                            json.data?.welcomeSent
+                              ? ` (welcome email sent with ${json.data.sentCount} jobs)`
+                              : ""
+                          }`
+                        );
+                        setSubscribeEmail("");
+                      } else {
+                        setSubscribeMsg(
+                          `❌ Failed to subscribe ${email}: ${
+                            json.error || "Unknown error"
+                          }`
+                        );
+                      }
+                    } catch (err: any) {
+                      console.error("❌ Subscription error:", err);
+                      setSubscribeMsg(
+                        `❌ Failed to subscribe: ${err?.message || err}`
+                      );
+                    }
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Subscribe
+                </button>
                 <button
                   onClick={async () => {
                     try {
