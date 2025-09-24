@@ -134,8 +134,8 @@ export async function POST(request: NextRequest) {
 
     // Update the job
     const updateResult = await jobsCol.updateOne(
-      { _id: new ObjectId(jobId) },
-      { $set: updateData }
+      { _id: new ObjectId(jobId) } as Record<string, unknown>,
+      { $set: updateData as Record<string, unknown> }
     );
 
     if (updateResult.matchedCount === 0) {

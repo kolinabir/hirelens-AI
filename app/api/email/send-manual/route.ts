@@ -138,9 +138,19 @@ export async function POST(request: NextRequest) {
     // Update subscriber's sent job IDs
     const newSentIds = [
       ...sentJobIds,
-      ...newJobs.map((j) =>
-        typeof j._id === "string" ? j._id : j._id?.toString()
-      ),
+      ...newJobs
+        .map((j) => {
+          const id = j._id;
+          if (typeof id === "string") {
+            return id;
+          }
+          // Handle ObjectId case
+          if (id && typeof id === "object") {
+            return (id as { toString(): string }).toString();
+          }
+          return "";
+        })
+        .filter((id) => id !== ""),
     ];
 
     await subsCol.updateOne(
@@ -307,9 +317,19 @@ export async function PUT(request: NextRequest) {
         // Update subscriber's sent job IDs
         const newSentIds = [
           ...sentJobIds,
-          ...newJobs.map((j) =>
-            typeof j._id === "string" ? j._id : j._id?.toString()
-          ),
+          ...newJobs
+            .map((j) => {
+              const id = j._id;
+              if (typeof id === "string") {
+                return id;
+              }
+              // Handle ObjectId case
+              if (id && typeof id === "object") {
+                return (id as { toString(): string }).toString();
+              }
+              return "";
+            })
+            .filter((id) => id !== ""),
         ];
 
         await subsCol.updateOne(

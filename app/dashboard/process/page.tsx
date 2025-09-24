@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { JobPost } from "@/types";
 
+interface ApplicationMethod {
+  type: string;
+  value: string;
+  label?: string;
+}
+
 interface ProcessedData {
   jobTitle?: string;
   company?: string;
@@ -14,8 +20,8 @@ interface ProcessedData {
   responsibilities?: string[];
   benefits?: string[];
   applicationDeadline?: string;
-  applicationMethods?: any[];
-  [key: string]: any;
+  applicationMethods?: ApplicationMethod[];
+  [key: string]: string | string[] | ApplicationMethod[] | undefined;
 }
 
 export default function ManualProcessingPage() {
