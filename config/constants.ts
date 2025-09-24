@@ -76,7 +76,7 @@ export const API_ROUTES = {
 // Database Configuration
 export const DB_CONFIG = {
   collections: {
-    jobs: "job_posts",
+    jobs: "jobs",
     groups: "facebook_groups",
     credentials: "user_credentials",
   },

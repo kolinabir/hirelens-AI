@@ -47,14 +47,17 @@ export default function GroupsManager({
     if (!confirm("Are you sure you want to delete this group?")) return;
 
     try {
-      const response = await fetch(`/api/groups/${groupId}`, {
+      const response = await fetch("/api/groups", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupIds: [groupId] }),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
         onUpdate();
       } else {
-        alert("Failed to delete group");
+        alert(`Failed to delete group: ${result.error}`);
       }
     } catch (error) {
       alert("Failed to delete group");

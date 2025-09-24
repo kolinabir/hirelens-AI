@@ -300,3 +300,115 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+/**
+ * @swagger
+ * /api/groups:
+ *   delete:
+ *     summary: Remove Facebook groups
+ *     description: Remove one or more Facebook groups from the scraping list
+ *     tags:
+ *       - Groups
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               groupIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of group IDs to remove
+ *                 example:
+ *                   - "devforhire"
+ *                   - "dhakajobs"
+ *             required:
+ *               - groupIds
+ *     responses:
+ *       200:
+ *         description: Groups removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     removed:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: Group IDs that were successfully removed
+ *                     notFound:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: Group IDs that were not found
+ *       400:
+ *         description: Invalid request - groupIds array required
+ *       500:
+ *         description: Server error
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    await dbConnection.connect();
+    const db = dbConnection.getDb();
+
+    const body = await request.json();
+    const { groupIds } = body;
+
+    if (!groupIds || !Array.isArray(groupIds)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "groupIds array is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    const removed: string[] = [];
+    const notFound: string[] = [];
+
+    for (const groupId of groupIds) {
+      try {
+        const result = await db.collection("groups").deleteOne({ groupId });
+
+        if (result.deletedCount > 0) {
+          removed.push(groupId);
+          apiLogger.info(`✅ Removed group: ${groupId}`);
+        } else {
+          notFound.push(groupId);
+          apiLogger.warn(`⚠️ Group not found: ${groupId}`);
+        }
+      } catch (error) {
+        notFound.push(groupId);
+        apiLogger.error(`❌ Error removing group ${groupId}:`, error);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        removed,
+        notFound,
+      },
+      message: `Removed ${removed.length} groups. ${notFound.length} not found.`,
+    });
+  } catch (error) {
+    apiLogger.error("❌ Error removing groups:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to remove groups",
+      },
+      { status: 500 }
+    );
+  }
+}
