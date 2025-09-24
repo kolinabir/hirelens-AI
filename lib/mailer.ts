@@ -58,9 +58,15 @@ export async function sendJobDigestEmail(
 
   const htmlItems = jobs
     .map((j, idx) => {
-      const title = j.title || "Untitled Role";
-      const company = j.company ? ` at ${j.company}` : "";
-      const location = j.location ? ` — ${j.location}` : "";
+      const title = j.title || "Job Opportunity";
+      const company =
+        j.company && j.company !== "Company not specified"
+          ? ` at ${j.company}`
+          : "";
+      const location =
+        j.location && j.location !== "Location not specified"
+          ? ` — ${j.location}`
+          : "";
       const deadline = j.deadline ? ` | Deadline: ${j.deadline}` : "";
       const applyLink = j.url
         ? `<a href="${j.url}" style="color: #3b82f6; text-decoration: none; margin-right: 10px; background: #dbeafe; padding: 8px 16px; border-radius: 8px; font-weight: 600;">Apply Now</a>`
@@ -69,8 +75,16 @@ export async function sendJobDigestEmail(
         title
       )}" style="color: #10b981; text-decoration: none; background: #dcfce7; padding: 8px 16px; border-radius: 8px; font-weight: 600;">Preview Job</a>`;
 
+      console.log(`📧 Processing job ${idx + 1}:`, {
+        title,
+        company: j.company,
+        location: j.location,
+        deadline: j.deadline,
+        url: j.url,
+      });
+
       return `
-        <li style="margin-bottom: 20px; padding: 20px; border-left: 4px solid #3b82f6; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <li style="margin-bottom: 20px; padding: 20px; border-left: 4px solid #3b82f6; background: #f8fafc; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           <strong style="color: #1e40af; font-size: 18px; display: block; margin-bottom: 8px;">${
             idx + 1
           }. ${title}${company}</strong>
@@ -85,7 +99,7 @@ export async function sendJobDigestEmail(
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; background: #ffffff;">
       <!-- Header -->
-      <div style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+      <div style="background: #3b82f6; padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
         <div style="display: inline-flex; align-items: center; margin-bottom: 16px;">
           <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px;">
             <svg width="24" height="24" fill="white" viewBox="0 0 24 24">
@@ -110,7 +124,7 @@ export async function sendJobDigestEmail(
 
         <!-- Call to Action -->
         <div style="text-align: center; margin: 40px 0;">
-          <a href="${baseUrl}/dashboard" style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: inline-block; transition: all 0.3s ease;">
+          <a href="${baseUrl}/dashboard" style="background: #3b82f6; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: inline-block; transition: all 0.3s ease;">
             🚀 Explore All Jobs on HireLens
           </a>
         </div>
@@ -120,7 +134,7 @@ export async function sendJobDigestEmail(
       <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px; border-top: 1px solid #e2e8f0;">
         <div style="text-align: center; margin-bottom: 20px;">
           <div style="display: inline-flex; align-items: center; margin-bottom: 12px;">
-            <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px;">
+            <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px;">
               <svg width="14" height="14" fill="white" viewBox="0 0 24 24">
                 <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
               </svg>
@@ -152,12 +166,16 @@ We've found ${
 ${jobs
   .map(
     (j, idx) =>
-      `${idx + 1}. ${j.title || "Untitled Role"}${
-        j.company ? ` at ${j.company}` : ""
-      }${j.location ? ` — ${j.location}` : ""}${
-        j.deadline ? ` | Deadline: ${j.deadline}` : ""
-      }
-Apply: ${j.url || "N/A"}
+      `${idx + 1}. ${j.title || "Job Opportunity"}${
+        j.company && j.company !== "Company not specified"
+          ? ` at ${j.company}`
+          : ""
+      }${
+        j.location && j.location !== "Location not specified"
+          ? ` — ${j.location}`
+          : ""
+      }${j.deadline ? ` | Deadline: ${j.deadline}` : ""}
+Apply: ${j.url || "Check HireLens Dashboard"}
 Preview: ${baseUrl}/dashboard/jobs?search=${encodeURIComponent(j.title || "")}`
   )
   .join("\n\n")}

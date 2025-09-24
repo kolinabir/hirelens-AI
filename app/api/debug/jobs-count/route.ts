@@ -21,6 +21,17 @@ export async function GET() {
       postUrl: j.postUrl || "No URL",
       facebookUrl: j.facebookUrl,
       scrapedAt: j.scrapedAt,
+      // Debug fields
+      rawJobTitle: j.jobTitle,
+      rawJobDetailsTitle: j.jobDetails?.title,
+      rawCompany: j.company,
+      rawJobDetailsCompany: j.jobDetails?.company,
+      rawContent: j.content?.substring(0, 200),
+      rawOriginalPost: j.originalPost?.substring(0, 200),
+      isProcessed: j.isProcessed,
+      source: j.source,
+      hasApifyData: !!j.apifyData,
+      hasJobDetails: !!j.jobDetails,
     }));
 
     return NextResponse.json({
