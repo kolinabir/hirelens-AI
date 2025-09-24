@@ -80,10 +80,14 @@ export const DB_CONFIG = {
     groups: "facebook_groups",
     credentials: "user_credentials",
     subscribers: "email_subscribers",
+    trackedWebsites: "tracked_websites",
+    websiteSnapshots: "website_snapshots",
   },
   indexes: {
     jobs: ["postId", "groupId", "scrapedAt", "isProcessed"],
     groups: ["groupId", "url"],
+    trackedWebsites: ["url", "isActive"],
+    websiteSnapshots: ["websiteId", "scrapedAt"],
   },
 } as const;
 

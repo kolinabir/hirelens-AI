@@ -6,6 +6,7 @@ export interface MailJobDigestItem {
   company?: string;
   location?: string;
   url?: string;
+  deadline?: string;
 }
 
 export async function createTransport() {
@@ -53,25 +54,40 @@ export async function sendJobDigestEmail(
   }
 
   const subject = `Your job updates (${jobs.length} new)`;
+  const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+  
   const htmlItems = jobs
     .map((j, idx) => {
       const title = j.title || "Untitled Role";
       const company = j.company ? ` at ${j.company}` : "";
       const location = j.location ? ` — ${j.location}` : "";
-      const url = j.url ? `<a href="${j.url}">${j.url}</a>` : "";
-      return `<li><strong>${
-        idx + 1
-      }. ${title}${company}${location}</strong><br/>${url}</li>`;
+      const deadline = j.deadline ? ` | Deadline: ${j.deadline}` : "";
+      const applyLink = j.url ? `<a href="${j.url}" style="color: #3b82f6; text-decoration: none; margin-right: 10px;">Apply Now</a>` : "";
+      const previewLink = `<a href="${baseUrl}/dashboard/jobs?search=${encodeURIComponent(title)}" style="color: #10b981; text-decoration: none;">Preview Job</a>`;
+      
+      return `
+        <li style="margin-bottom: 15px; padding: 10px; border-left: 3px solid #3b82f6; background-color: #f8fafc;">
+          <strong style="color: #1e40af;">${idx + 1}. ${title}${company}${location}${deadline}</strong>
+          <div style="margin-top: 8px;">
+            ${applyLink}${previewLink}
+          </div>
+        </li>`;
     })
     .join("");
 
   const html = `
-    <div>
-      <p>Here are your latest job updates:</p>
-      <ol>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #1e40af; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">Your Job Updates</h2>
+      <p style="color: #374151; margin-bottom: 20px;">Here are your latest job updates:</p>
+      <ul style="list-style: none; padding: 0;">
         ${htmlItems}
-      </ol>
-      <p>You're receiving this because you subscribed to job updates.</p>
+      </ul>
+      <div style="margin-top: 30px; padding: 15px; background-color: #f3f4f6; border-radius: 5px;">
+        <p style="color: #6b7280; font-size: 14px; margin: 0;">
+          You're receiving this because you subscribed to job updates. 
+          <a href="${baseUrl}/dashboard" style="color: #3b82f6;">Visit Dashboard</a>
+        </p>
+      </div>
     </div>
   `;
 

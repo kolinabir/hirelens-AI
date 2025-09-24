@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
         title: j.jobDetails?.title || j.jobTitle,
         company: j.jobDetails?.company || j.company,
         location: j.jobDetails?.location || j.location,
+        deadline: j.jobDetails?.applicationDeadline,
         url: j.postUrl || j.facebookUrl || j.apifyData?.facebookUrl,
       }));
 

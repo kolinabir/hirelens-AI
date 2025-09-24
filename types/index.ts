@@ -224,3 +224,43 @@ export interface EmailSubscriber {
   lastSentAt?: Date;
   sentJobIds?: string[]; // track which job _ids sent
 }
+
+export interface TrackedWebsite {
+  _id?: string;
+  url: string;
+  name: string;
+  companyName?: string;
+  isActive: boolean;
+  lastScraped?: Date;
+  lastJobCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  scrapingInterval?: number; // hours between scrapes, default 24
+}
+
+export interface WebsiteJobData {
+  jobTitle: string;
+  positionRole: string;
+  companyName: string;
+  location: string;
+  jobType?: string;
+  experienceLevel?: string;
+  department?: string;
+  salaryCompensation?: string;
+  jobDescriptionSummary?: string;
+  requirements?: string;
+  applicationDeadline?: string;
+  postedDate?: string;
+}
+
+export interface WebsiteSnapshot {
+  _id?: string;
+  websiteId: string; // reference to TrackedWebsite._id
+  websiteUrl: string;
+  scrapedAt: Date;
+  jobCount: number;
+  jobs: WebsiteJobData[];
+  newJobsFound?: number; // compared to previous snapshot
+  newJobs?: WebsiteJobData[]; // only the new jobs
+  rawApiResponse?: any; // store full Smyth AI response for debugging
+}

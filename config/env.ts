@@ -50,6 +50,10 @@ interface EnvConfig {
   smtpUser: string;
   smtpPass: string;
   smtpFromEmail: string;
+
+  // Smyth AI
+  smythAiApiKey?: string;
+  smythAiAuthToken?: string;
 }
 
 function validateEnvVar(
@@ -160,6 +164,10 @@ export const env: EnvConfig = {
     process.env.SMTP_FROM_EMAIL,
     process.env.SMTP_USER
   ),
+
+  // Smyth AI
+  smythAiApiKey: process.env.SMYTH_AI_API_KEY,
+  smythAiAuthToken: process.env.SMYTH_AI_AUTH_TOKEN,
 };
 
 // Validate required environment variables on startup

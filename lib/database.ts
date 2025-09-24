@@ -94,6 +94,18 @@ class DatabaseConnection {
     return this.getCollection(DB_CONFIG.collections.subscribers);
   }
 
+  public getTrackedWebsitesCollection(): Collection<
+    import("../types").TrackedWebsite
+  > {
+    return this.getCollection(DB_CONFIG.collections.trackedWebsites);
+  }
+
+  public getWebsiteSnapshotsCollection(): Collection<
+    import("../types").WebsiteSnapshot
+  > {
+    return this.getCollection(DB_CONFIG.collections.websiteSnapshots);
+  }
+
   private async createIndexes(): Promise<void> {
     // Disabled to prevent any unique index creation conflicts
     console.log("⚠️ Index creation is disabled to prevent conflicts");

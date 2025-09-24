@@ -7,6 +7,7 @@ import type { DashboardStats, FacebookGroup, JobPost } from "@/types";
 import GroupsManager from "@/components/GroupsManager";
 import ScraperStatus from "@/components/ScraperStatus";
 import JobsTab from "@/components/JobsTab";
+import WebsiteTracker from "@/components/WebsiteTracker";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -15,7 +16,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "groups" | "jobs" | "scraper"
+    "overview" | "groups" | "jobs" | "scraper" | "websites"
   >("overview");
   const [subscribeEmail, setSubscribeEmail] = useState("");
   const [subscribeMsg, setSubscribeMsg] = useState<string | null>(null);
@@ -243,6 +244,25 @@ export default function Dashboard() {
                       strokeLinejoin="round"
                       strokeWidth={2}
                       d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                ),
+              },
+              {
+                id: "websites",
+                label: "Website Tracker",
+                icon: (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
                     />
                   </svg>
                 ),
@@ -1068,6 +1088,10 @@ export default function Dashboard() {
 
         {activeTab === "scraper" && (
           <ScraperStatus onUpdate={handleGroupsUpdate} />
+        )}
+
+        {activeTab === "websites" && (
+          <WebsiteTracker onUpdate={handleGroupsUpdate} />
         )}
       </div>
     </div>
