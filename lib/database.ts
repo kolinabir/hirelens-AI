@@ -176,6 +176,13 @@ export class DatabaseUtils {
     return await collection.countDocuments(filter);
   }
 
+  static async countGroups(
+    filter: Filter<FacebookGroup> = {}
+  ): Promise<number> {
+    const collection = dbConnection.getGroupsCollection();
+    return await collection.countDocuments(filter);
+  }
+
   static async updateJobPost(
     postId: string,
     update: Partial<JobPost>
@@ -201,7 +208,10 @@ export class DatabaseUtils {
   static async clearUnstructuredJobPosts(): Promise<number> {
     const collection = dbConnection.getJobsCollection();
     const result = await collection.deleteMany({
-      $nor: [{ postUrl: { $exists: true } }, { extractedAt: { $exists: true } }],
+      $nor: [
+        { postUrl: { $exists: true } },
+        { extractedAt: { $exists: true } },
+      ],
     });
     return result.deletedCount;
   }
@@ -320,7 +330,7 @@ export class DatabaseUtils {
     const [totalJobs, todayJobs, activeGroups] = await Promise.all([
       DatabaseUtils.countJobPosts(),
       DatabaseUtils.countJobPosts({ scrapedAt: { $gte: today } }),
-      DatabaseUtils.countJobPosts({ isActive: true }),
+      DatabaseUtils.countGroups({ isActive: true }),
     ]);
 
     return {

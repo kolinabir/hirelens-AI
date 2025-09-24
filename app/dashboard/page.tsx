@@ -5,8 +5,8 @@ import type { DashboardStats, FacebookGroup, JobPost } from "@/types";
 
 // Components
 import GroupsManager from "@/components/GroupsManager";
-import JobPostsList from "@/components/JobPostsList";
 import ScraperStatus from "@/components/ScraperStatus";
+import JobsTab from "@/components/JobsTab";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -102,13 +102,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200/50">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+              <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -124,7 +124,7 @@ export default function Dashboard() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-gray-900">
                   Job Scraper Dashboard
                 </h1>
                 <p className="text-gray-600 mt-1">
@@ -267,7 +267,7 @@ export default function Dashboard() {
             {/* Stats Overview */}
             {stats && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl shadow-sm border border-blue-200">
+                <div className="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium text-blue-600 uppercase tracking-wide">
@@ -298,17 +298,19 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl shadow-sm border border-green-200">
+                <div className="bg-green-50 p-6 rounded-xl shadow-sm border border-green-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium text-green-600 uppercase tracking-wide">
                         Active Groups
                       </h3>
                       <p className="text-3xl font-bold text-green-900 mt-2">
-                        {stats.activeGroups}
+                        {stats?.activeGroups || 0}
                       </p>
                       <p className="text-sm text-green-700 mt-1">
-                        Being monitored
+                        {stats?.activeGroups === 1
+                          ? "Being monitored"
+                          : "Being monitored"}
                       </p>
                     </div>
                     <div className="p-3 bg-green-500 rounded-lg">
@@ -329,14 +331,16 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl shadow-sm border border-purple-200">
+                <div className="bg-purple-50 p-6 rounded-xl shadow-sm border border-purple-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium text-purple-600 uppercase tracking-wide">
                         Structured Jobs
                       </h3>
                       <p className="text-3xl font-bold text-purple-900 mt-2">
-                        {Math.floor(stats.totalJobs * 0.7)}
+                        {stats?.totalJobs
+                          ? Math.floor(stats.totalJobs * 0.7)
+                          : 0}
                       </p>
                       <p className="text-sm text-purple-700 mt-1">
                         AI processed
@@ -360,7 +364,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl shadow-sm border border-orange-200">
+                <div className="bg-orange-50 p-6 rounded-xl shadow-sm border border-orange-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium text-orange-600 uppercase tracking-wide">
@@ -396,7 +400,7 @@ export default function Dashboard() {
             {/* Quick Actions */}
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg">
+                <div className="p-2 bg-indigo-600 rounded-lg">
                   <svg
                     className="w-6 h-6 text-white"
                     fill="none"
@@ -418,10 +422,10 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <button
                   onClick={() => setActiveTab("scraper")}
-                  className="group relative p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                  className="group relative p-6 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 hover:border-blue-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="p-3 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform duration-300">
                       <svg
                         className="w-6 h-6 text-white"
                         fill="none"
@@ -464,10 +468,10 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => setActiveTab("groups")}
-                  className="group relative p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl hover:from-green-100 hover:to-emerald-100 hover:border-green-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                  className="group relative p-6 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 hover:border-green-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="p-3 bg-green-600 rounded-lg group-hover:scale-110 transition-transform duration-300">
                       <svg
                         className="w-6 h-6 text-white"
                         fill="none"
@@ -510,10 +514,10 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => setActiveTab("jobs")}
-                  className="group relative p-6 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl hover:from-purple-100 hover:to-pink-100 hover:border-purple-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                  className="group relative p-6 bg-purple-50 border border-purple-200 rounded-xl hover:bg-purple-100 hover:border-purple-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="p-3 bg-purple-600 rounded-lg group-hover:scale-110 transition-transform duration-300">
                       <svg
                         className="w-6 h-6 text-white"
                         fill="none"
@@ -766,7 +770,7 @@ export default function Dashboard() {
             {/* System Status */}
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg">
+                <div className="p-2 bg-green-500 rounded-lg">
                   <svg
                     className="w-5 h-5 text-white"
                     fill="none"
@@ -888,7 +892,15 @@ export default function Dashboard() {
           <GroupsManager groups={groups} onUpdate={handleGroupsUpdate} />
         )}
 
-        {activeTab === "jobs" && <JobPostsList jobs={jobs} />}
+        {activeTab === "jobs" && (
+          <JobsTab
+            initialJobs={jobs}
+            onUpdate={() => {
+              // Refresh jobs when needed
+              fetchDashboardData();
+            }}
+          />
+        )}
 
         {activeTab === "scraper" && (
           <ScraperStatus onUpdate={handleGroupsUpdate} />

@@ -483,7 +483,7 @@ export default function JobsPage() {
         {/* Advanced Filters */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
           {/* Filter Header */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
+          <div className="bg-blue-50 px-6 py-4 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg">
