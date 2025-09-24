@@ -83,6 +83,17 @@ class DatabaseConnection {
     );
   }
 
+  public getSubscribersCollection(): Collection<{
+    _id?: string;
+    email: string;
+    createdAt: Date;
+    isVerified?: boolean;
+    lastSentAt?: Date;
+    sentJobIds?: string[];
+  }> {
+    return this.getCollection(DB_CONFIG.collections.subscribers);
+  }
+
   private async createIndexes(): Promise<void> {
     // Disabled to prevent any unique index creation conflicts
     console.log("⚠️ Index creation is disabled to prevent conflicts");

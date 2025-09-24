@@ -17,6 +17,9 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "groups" | "jobs" | "scraper"
   >("overview");
+  const [subscribeEmail, setSubscribeEmail] = useState("");
+  const [subscribeMsg, setSubscribeMsg] = useState<string | null>(null);
+  const [sendingHourly, setSendingHourly] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -564,6 +567,117 @@ export default function Dashboard() {
                   </div>
                 </button>
               </div>
+            </div>
+
+            {/* Email Subscriptions */}
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-indigo-600 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 12H8m8 0a4 4 0 110-8 4 4 0 010 8zM8 12a4 4 0 100-8 4 4 0 000 8zm8 0v1a7 7 0 01-14 0v-1"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Subscribe to Job Updates
+                </h3>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <input
+                  type="email"
+                  value={subscribeEmail}
+                  onChange={(e) => setSubscribeEmail(e.target.value)}
+                  placeholder="Enter email to receive hourly job updates"
+                  className="flex-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      const email = subscribeEmail.trim();
+                      if (!email) return;
+                      setSubscribeMsg(null);
+                      try {
+                        const res = await fetch("/api/subscribers", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ email }),
+                        });
+                        const json = await res.json();
+                        if (json.success) {
+                          setSubscribeMsg(
+                            `📧 Subscribed ${email} to hourly job updates`
+                          );
+                          setSubscribeEmail("");
+                        } else {
+                          setSubscribeMsg(
+                            `❌ Failed to subscribe ${email}: ${
+                              json.error || "Unknown error"
+                            }`
+                          );
+                        }
+                      } catch (err: any) {
+                        setSubscribeMsg(
+                          `❌ Failed to subscribe: ${err?.message || err}`
+                        );
+                      }
+                    }
+                  }}
+                />
+                <button
+                  onClick={async () => {
+                    try {
+                      setSendingHourly(true);
+                      setSubscribeMsg(null);
+                      const res = await fetch("/api/email/send-hourly", {
+                        method: "POST",
+                      });
+                      const json = await res.json();
+                      if (json.success) {
+                        setSubscribeMsg(
+                          `✅ Triggered hourly email sender (sent: ${
+                            json.data?.totalSent ?? 0
+                          })`
+                        );
+                      } else {
+                        setSubscribeMsg(
+                          `❌ Failed to trigger email sender: ${
+                            json.error || "Unknown error"
+                          }`
+                        );
+                      }
+                    } catch (err: any) {
+                      setSubscribeMsg(
+                        `❌ Error triggering email sender: ${
+                          err?.message || err
+                        }`
+                      );
+                    } finally {
+                      setSendingHourly(false);
+                    }
+                  }}
+                  disabled={sendingHourly}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {sendingHourly ? "Sending..." : "Send Hourly Emails Now"}
+                </button>
+              </div>
+              {subscribeMsg && (
+                <p className="text-sm mt-3 {subscribeMsg.startsWith('✅') ? 'text-green-600' : 'text-gray-700'}">
+                  {subscribeMsg}
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                Press Enter after typing an email to subscribe. The system sends
+                up to 5 unseen jobs per subscriber and tracks sent job IDs to
+                avoid duplicates.
+              </p>
             </div>
 
             {/* Recent Activity */}

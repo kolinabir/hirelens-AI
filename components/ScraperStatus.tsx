@@ -562,6 +562,90 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
             Clear Logs
           </button>
         </div>
+
+        {/* Email Subscriptions */}
+        <div className="mt-6">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <input
+                type="email"
+                placeholder="Enter email to subscribe to hourly job updates"
+                className="flex-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter") {
+                    const target = e.target as HTMLInputElement;
+                    const email = target.value.trim();
+                    if (!email) return;
+                    try {
+                      const res = await fetch("/api/subscribers", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email }),
+                      });
+                      const json = await res.json();
+                      if (json.success) {
+                        setLogs((prev) => [
+                          ...prev,
+                          `📧 Subscribed ${email} to hourly job updates`,
+                        ]);
+                        target.value = "";
+                      } else {
+                        setLogs((prev) => [
+                          ...prev,
+                          `❌ Failed to subscribe ${email}: ${
+                            json.error || "Unknown error"
+                          }`,
+                        ]);
+                      }
+                    } catch (err) {
+                      setLogs((prev) => [
+                        ...prev,
+                        `❌ Failed to subscribe: ${err}`,
+                      ]);
+                    }
+                  }
+                }}
+              />
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/email/send-hourly", {
+                      method: "POST",
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                      setLogs((prev) => [
+                        ...prev,
+                        `✅ Triggered hourly email sender (sent: ${
+                          json.data?.totalSent ?? 0
+                        })`,
+                      ]);
+                    } else {
+                      setLogs((prev) => [
+                        ...prev,
+                        `❌ Failed to trigger email sender: ${
+                          json.error || "Unknown error"
+                        }`,
+                      ]);
+                    }
+                  } catch (err) {
+                    setLogs((prev) => [
+                      ...prev,
+                      `❌ Error triggering email sender: ${err}`,
+                    ]);
+                  }
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                Send Hourly Emails Now
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Press Enter after typing an email to subscribe. This sends up to 5
+              unseen jobs per subscriber and tracks sent job IDs.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Activity Logs */}

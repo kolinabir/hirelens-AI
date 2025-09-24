@@ -215,3 +215,12 @@ export interface PaginatedResponse<T> {
     hasPrev: boolean;
   };
 }
+
+export interface EmailSubscriber {
+  _id?: string;
+  email: string;
+  createdAt: Date;
+  isVerified?: boolean;
+  lastSentAt?: Date;
+  sentJobIds?: string[]; // track which job _ids sent
+}

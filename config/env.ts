@@ -43,6 +43,13 @@ interface EnvConfig {
   proxyPort?: number;
   proxyUsername?: string;
   proxyPassword?: string;
+
+  // SMTP / Email
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPass: string;
+  smtpFromEmail: string;
 }
 
 function validateEnvVar(
@@ -138,6 +145,21 @@ export const env: EnvConfig = {
     : undefined,
   proxyUsername: process.env.PROXY_USERNAME,
   proxyPassword: process.env.PROXY_PASSWORD,
+
+  // SMTP / Email
+  smtpHost: validateEnvVar(
+    "SMTP_HOST",
+    process.env.SMTP_HOST,
+    "smtp.gmail.com"
+  ),
+  smtpPort: parseNumber(process.env.SMTP_PORT, 465),
+  smtpUser: validateEnvVar("SMTP_USER", process.env.SMTP_USER),
+  smtpPass: validateEnvVar("SMTP_PASS", process.env.SMTP_PASS),
+  smtpFromEmail: validateEnvVar(
+    "SMTP_FROM_EMAIL",
+    process.env.SMTP_FROM_EMAIL,
+    process.env.SMTP_USER
+  ),
 };
 
 // Validate required environment variables on startup

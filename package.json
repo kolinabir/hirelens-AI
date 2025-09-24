@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "send-hourly": "node ./scripts/send-hourly-email.js"
   },
   "dependencies": {
     "@types/cheerio": "^0.22.35",
@@ -16,6 +17,7 @@
     "mongodb": "^6.20.0",
     "mongoose": "^8.18.2",
     "next": "15.5.3",
+    "nodemailer": "7.0.6",
     "puppeteer": "^24.22.0",
     "puppeteer-extra": "^3.3.6",
     "rate-limiter-flexible": "^7.3.2",

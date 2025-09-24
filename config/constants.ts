@@ -79,6 +79,7 @@ export const DB_CONFIG = {
     jobs: "jobs",
     groups: "facebook_groups",
     credentials: "user_credentials",
+    subscribers: "email_subscribers",
   },
   indexes: {
     jobs: ["postId", "groupId", "scrapedAt", "isProcessed"],
