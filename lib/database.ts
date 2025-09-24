@@ -197,6 +197,15 @@ export class DatabaseUtils {
     return result.deletedCount;
   }
 
+  // Remove only unstructured job posts (missing both postUrl and extractedAt)
+  static async clearUnstructuredJobPosts(): Promise<number> {
+    const collection = dbConnection.getJobsCollection();
+    const result = await collection.deleteMany({
+      $nor: [{ postUrl: { $exists: true } }, { extractedAt: { $exists: true } }],
+    });
+    return result.deletedCount;
+  }
+
   // Apify-specific operations
   static async saveApifyPosts(
     apifyPosts: ApifyPost[],

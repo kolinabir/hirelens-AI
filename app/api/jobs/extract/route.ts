@@ -113,17 +113,45 @@ export async function POST(request: NextRequest) {
 
     for (const job of structuredJobs) {
       try {
+        type StructuredJob = {
+          postUrl?: string;
+          attachments?: Array<{ url?: string }>;
+          facebookUrl?: string;
+          [key: string]: unknown;
+        };
+        const j = job as StructuredJob;
+        
+        // Derive a stable post URL for uniqueness: prefer job.postUrl, else first attachment url, else facebookUrl
+        const derivedPostUrl: string | undefined =
+          (typeof j.postUrl === "string" && j.postUrl.trim()) ||
+          (Array.isArray(j.attachments) && j.attachments[0]?.url) ||
+          (typeof j.facebookUrl === "string" && j.facebookUrl.trim()) ||
+          undefined;
+
+        if (!derivedPostUrl) {
+          // Skip if we cannot determine a unique post URL
+          console.warn("Skipping structured job without resolvable postUrl", { jobSample: j });
+          continue;
+        }
+
         const jobData = {
           ...job,
+          postUrl: derivedPostUrl,
           source: "facebook_external_ai",
           extractedAt: new Date(),
           processingVersion: "external_ai_v1",
         };
 
-        const result = await db.collection("jobs").insertOne(jobData);
+        const result = await dbConnection.getJobsCollection().updateOne(
+          { postUrl: derivedPostUrl },
+          { $set: jobData },
+          { upsert: true }
+        );
+
         savedJobs.push({
           ...jobData,
-          _id: result.insertedId,
+          _id: result.upsertedId ?? undefined,
+          _op: result.upsertedId ? "upserted" : result.modifiedCount > 0 ? "updated" : "unchanged",
         });
       } catch (dbError) {
         console.error("❌ Error saving job to database:", dbError);

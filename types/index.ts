@@ -52,7 +52,56 @@ export interface JobPost {
   isProcessed: boolean;
   isDuplicate: boolean;
   tags: string[];
-  source: "apify" | "puppeteer" | "manual"; // Track the scraping source
+  source: "apify" | "puppeteer" | "manual" | string; // Track the scraping source
+  // Structured job support (external AI)
+  postUrl?: string; // Unique key for structured jobs
+  extractedAt?: Date; // When structured data was extracted
+  processingVersion?: string; // e.g., "external_ai_v1"
+  
+  // Structured job fields from external AI processing
+  jobTitle?: string;
+  originalPost?: string;
+  user?: {
+    id?: string;
+    name?: string;
+  };
+  facebookUrl?: string;
+  likesCount?: number;
+  commentsCount?: number;
+  attachments?: Array<{
+    thumbnail?: string;
+    __typename?: string;
+    photo_image?: {
+      uri: string;
+      height: number;
+      width: number;
+    };
+    url?: string;
+    id?: string;
+    ocrText?: string;
+  }>;
+  company?: string;
+  location?: string;
+  salary?: string;
+  employmentType?: string;
+  experienceLevel?: string;
+  experienceRequired?: string;
+  technicalSkills?: string[];
+  softSkills?: string[];
+  niceToHaveSkills?: string[];
+  responsibilities?: string[];
+  benefits?: string[];
+  education?: string;
+  applicationMethods?: string[];
+  applicationDeadline?: string;
+  howToApply?: string;
+  jobSummary?: string;
+  category?: string;
+  genderEligibility?: string;
+  onsiteRequired?: boolean;
+  remoteOption?: boolean;
+  workingDaysHours?: string;
+  vacancies?: number;
 }
 
 export interface FacebookGroup {
@@ -128,6 +177,7 @@ export interface JobFilters {
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
+  structuredOnly?: boolean; // Filter for structured jobs (with postUrl/extractedAt)
 }
 
 export interface PaginatedResponse<T> {

@@ -299,11 +299,11 @@ export default function Dashboard() {
                       className="py-2 border-b last:border-b-0"
                     >
                       <div className="font-medium truncate">
-                        {job.jobDetails.title || "Untitled Job"}
+                        {job.jobTitle || job.jobDetails?.title || "Untitled Job"}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {job.author.name} •{" "}
-                        {new Date(job.postedDate).toLocaleDateString()}
+                        {job.user?.name || job.author?.name || "Unknown"} •{" "}
+                        {new Date(job.extractedAt || job.postedDate).toLocaleDateString()}
                       </div>
                     </div>
                   ))

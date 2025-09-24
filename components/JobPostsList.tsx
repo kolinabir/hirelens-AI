@@ -17,24 +17,31 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
     .filter((job) => {
       if (!filter) return true;
       const searchText = filter.toLowerCase();
+      
+      // Support both old and new job structures
+      const authorName = job.user?.name || job.author?.name || '';
+      const jobTitle = job.jobTitle || job.jobDetails?.title || '';
+      const company = job.company || job.jobDetails?.company || '';
+      const content = job.originalPost || job.content || '';
+      
       return (
-        job.content.toLowerCase().includes(searchText) ||
-        job.author.name.toLowerCase().includes(searchText) ||
-        job.groupName.toLowerCase().includes(searchText) ||
-        job.jobDetails.title?.toLowerCase().includes(searchText) ||
-        job.jobDetails.company?.toLowerCase().includes(searchText)
+        content.toLowerCase().includes(searchText) ||
+        authorName.toLowerCase().includes(searchText) ||
+        job.groupName?.toLowerCase().includes(searchText) ||
+        jobTitle.toLowerCase().includes(searchText) ||
+        company.toLowerCase().includes(searchText)
       );
     })
     .sort((a, b) => {
       if (sortBy === "date") {
-        return (
-          new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
-        );
+        const aDate = a.extractedAt || a.postedDate;
+        const bDate = b.extractedAt || b.postedDate;
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
       } else {
-        const aEngagement =
-          a.engagementMetrics.likes + a.engagementMetrics.comments;
-        const bEngagement =
-          b.engagementMetrics.likes + b.engagementMetrics.comments;
+        const aEngagement = (a.likesCount || a.engagementMetrics?.likes || 0) + 
+                           (a.commentsCount || a.engagementMetrics?.comments || 0);
+        const bEngagement = (b.likesCount || b.engagementMetrics?.likes || 0) + 
+                           (b.commentsCount || b.engagementMetrics?.comments || 0);
         return bEngagement - aEngagement;
       }
     });
@@ -49,9 +56,38 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
     });
   };
 
+  const formatRelativeTime = (date: Date | string) => {
+    const now = new Date();
+    const postDate = new Date(date);
+    const diffInHours = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    return formatDate(date);
+  };
+
   const truncateText = (text: string, maxLength: number = 200) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
+  };
+
+  const getProfileImageUrl = (job: JobPost) => {
+    // Try to get profile image from various sources
+    return job.author?.profileImage || 
+           (job.apifyData?.user?.id ? `https://graph.facebook.com/${job.apifyData.user.id}/picture?type=large` : null);
+  };
+
+  const getProfileUrl = (job: JobPost) => {
+    return job.author?.profileUrl || 
+           (job.apifyData?.user?.id ? `https://facebook.com/${job.apifyData.user.id}` : null);
+  };
+
+  const getPostUrl = (job: JobPost) => {
+    return job.postUrl || 
+           job.facebookUrl || 
+           job.apifyData?.facebookUrl ||
+           null;
   };
 
   return (
@@ -89,325 +125,370 @@ export default function JobPostsList({ jobs }: JobPostsListProps) {
       </div>
 
       {/* Job Posts */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {filteredJobs.length === 0 ? (
-          <div className="bg-white p-8 rounded-lg shadow text-center text-gray-500">
+          <div className="bg-white p-8 rounded-xl shadow-sm border text-center text-gray-500">
             {jobs.length === 0
               ? "No job posts found. Run the scraper to get job posts."
               : "No job posts match your search criteria."}
           </div>
         ) : (
-          filteredJobs.map((job) => (
-            <div
-              key={job._id}
-              className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  {/* Header */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="flex items-center gap-2">
-                      {job.author.profileImage && (
-                        <Image
-                          src={job.author.profileImage}
-                          alt={job.author.name}
-                          width={32}
-                          height={32}
-                          className="w-8 h-8 rounded-full"
-                        />
-                      )}
-                      <div>
-                        <h4 className="font-medium text-gray-900">
-                          {job.author.name}
-                        </h4>
-                        <p className="text-sm text-gray-500">{job.groupName}</p>
+          filteredJobs.map((job) => {
+            // Determine if this is a structured job
+            const isStructured = !!job.postUrl && !!job.extractedAt;
+            
+            // Get display values for both old and new structures
+            const displayName = job.user?.name || job.author?.name || 'Unknown User';
+            const displayTitle = job.jobTitle || job.jobDetails?.title || 'Job Post';
+            const displayCompany = job.company || job.jobDetails?.company;
+            const displayLocation = job.location || job.jobDetails?.location;
+            const displayContent = job.originalPost || job.content || '';
+            const displayDate = job.extractedAt || job.postedDate;
+            const displayLikes = job.likesCount || job.engagementMetrics?.likes || 0;
+            const displayComments = job.commentsCount || job.engagementMetrics?.comments || 0;
+            const displayShares = job.engagementMetrics?.shares || 0;
+            const displaySalary = job.salary || job.jobDetails?.salary;
+            const displayType = job.employmentType || job.jobDetails?.type;
+            
+            const profileImageUrl = getProfileImageUrl(job);
+            const profileUrl = getProfileUrl(job);
+            const postUrl = getPostUrl(job);
+
+            return (
+              <div
+                key={job._id}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden"
+              >
+                {/* Header Section */}
+                <div className="p-6 pb-4">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-4 flex-1">
+                      {/* Author Profile */}
+                      <div className="flex-shrink-0">
+                        {profileImageUrl ? (
+                          <div className="relative">
+                            <Image
+                              src={profileImageUrl}
+                              alt={displayName}
+                              width={56}
+                              height={56}
+                              className="w-14 h-14 rounded-full object-cover border-2 border-gray-100"
+                              onError={(e) => {
+                                // Fallback to initials if image fails to load
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg hidden">
+                              {displayName.charAt(0).toUpperCase()}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                            {displayName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Author Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {profileUrl ? (
+                            <a
+                              href={profileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                            >
+                              {displayName}
+                            </a>
+                          ) : (
+                            <h4 className="font-semibold text-gray-900">{displayName}</h4>
+                          )}
+                          {isStructured && (
+                            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                              ✨ AI Enhanced
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <span>{job.groupName}</span>
+                          <span>•</span>
+                          <span>{formatRelativeTime(displayDate)}</span>
+                          <span>•</span>
+                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                            job.source === "apify"
+                              ? "bg-blue-50 text-blue-700"
+                              : "bg-gray-50 text-gray-700"
+                          }`}>
+                            {job.source}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <span className="text-sm text-gray-500">•</span>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(job.postedDate)}
-                    </span>
-
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        job.source === "apify"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-green-100 text-green-800"
-                      }`}
-                    >
-                      {job.source}
-                    </span>
+                    {/* Post Actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {postUrl && (
+                        <a
+                          href={postUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View original post"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      )}
+                      <button
+                        onClick={() => setSelectedJob(job)}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                        title="View details"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Job Title */}
-                  {job.jobDetails.title && (
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {job.jobDetails.title}
-                    </h3>
-                  )}
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 leading-tight">
+                    {displayTitle}
+                  </h3>
 
-                  {/* Job Details */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3 text-sm">
-                    {job.jobDetails.company && (
-                      <div>
-                        <span className="text-gray-600">Company:</span>
-                        <span className="ml-1 font-medium">
-                          {job.jobDetails.company}
-                        </span>
+                  {/* Job Details Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                    {displayCompany && (
+                      <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-2 rounded-lg">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <span className="font-medium text-gray-900 truncate">{displayCompany}</span>
                       </div>
                     )}
-                    {job.jobDetails.location && (
-                      <div>
-                        <span className="text-gray-600">Location:</span>
-                        <span className="ml-1 font-medium">
-                          {job.jobDetails.location}
-                        </span>
+                    {displayLocation && (
+                      <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-2 rounded-lg">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="font-medium text-gray-900 truncate">{displayLocation}</span>
                       </div>
                     )}
-                    {job.jobDetails.type && (
-                      <div>
-                        <span className="text-gray-600">Type:</span>
-                        <span className="ml-1 font-medium capitalize">
-                          {job.jobDetails.type}
-                        </span>
+                    {displayType && (
+                      <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-2 rounded-lg">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0H8m8 0v2a2 2 0 01-2 2H10a2 2 0 01-2-2V6" />
+                        </svg>
+                        <span className="font-medium text-gray-900 capitalize truncate">{displayType}</span>
+                      </div>
+                    )}
+                    {displaySalary && (
+                      <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-2 rounded-lg">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                        <span className="font-medium text-gray-900 truncate">{displaySalary}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Content */}
-                  <div className="text-gray-700 mb-4">
-                    {truncateText(job.content)}
-                    {job.content.length > 200 && (
+                  {/* Additional Job Info */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {job.experienceLevel && (
+                      <span className="px-3 py-1 text-xs bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                        {job.experienceLevel}
+                      </span>
+                    )}
+                    {job.remoteOption && (
+                      <span className="px-3 py-1 text-xs bg-green-50 text-green-700 rounded-full border border-green-200">
+                        Remote Available
+                      </span>
+                    )}
+                    {job.genderEligibility && (
+                      <span className="px-3 py-1 text-xs bg-purple-50 text-purple-700 rounded-full border border-purple-200">
+                        {job.genderEligibility}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Technical Skills */}
+                  {job.technicalSkills && job.technicalSkills.length > 0 && (
+                    <div className="mb-4">
+                      <h5 className="text-sm font-semibold text-gray-700 mb-2">Required Skills:</h5>
+                      <div className="flex flex-wrap gap-1">
+                        {job.technicalSkills.slice(0, 8).map((skill, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 text-xs bg-indigo-50 text-indigo-700 rounded-md border border-indigo-200"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                        {job.technicalSkills.length > 8 && (
+                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md">
+                            +{job.technicalSkills.length - 8} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Content Preview */}
+                  <div className="text-gray-700 mb-4 leading-relaxed">
+                    {job.jobSummary ? (
+                      <div>
+                        <p className="font-medium text-gray-900 mb-2">Job Summary:</p>
+                        <p className="text-sm">{truncateText(job.jobSummary, 200)}</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm">{truncateText(displayContent, 250)}</p>
+                    )}
+                    {(displayContent.length > 250 || job.jobSummary) && (
                       <button
                         onClick={() => setSelectedJob(job)}
-                        className="ml-2 text-blue-600 hover:text-blue-800 text-sm"
+                        className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
                       >
-                        Read more
+                        Read full description →
                       </button>
                     )}
                   </div>
+                </div>
 
-                  {/* Engagement */}
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <span>👍 {job.engagementMetrics.likes}</span>
-                    <span>💬 {job.engagementMetrics.comments}</span>
-                    <span>📤 {job.engagementMetrics.shares}</span>
+                {/* Footer Section */}
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    {/* Engagement Metrics */}
+                    <div className="flex items-center gap-6 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M14 9V5a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H14zM12 17v2H8v-2h4zm2-8V5a1 1 0 0 0-2 0v4h2z"/>
+                        </svg>
+                        <span className="font-medium">{displayLikes}</span>
+                        <span>likes</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                        </svg>
+                        <span className="font-medium">{displayComments}</span>
+                        <span>comments</span>
+                      </div>
+                      {displayShares > 0 && (
+                        <div className="flex items-center gap-1">
+                          <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                          </svg>
+                          <span className="font-medium">{displayShares}</span>
+                          <span>shares</span>
+                        </div>
+                      )}
+                    </div>
 
-                    {job.apifyData?.facebookUrl && (
-                      <a
-                        href={job.apifyData.facebookUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800"
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedJob(job)}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        View on Facebook
-                      </a>
-                    )}
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                {/* Attachments Preview */}
-                {job.apifyData?.attachments &&
-                  job.apifyData.attachments.length > 0 && (
-                    <div className="ml-4">
-                      <div className="text-xs text-gray-500 mb-1">
-                        {job.apifyData.attachments.length} attachment(s)
-                      </div>
-                      {job.apifyData.attachments
-                        .slice(0, 2)
-                        .map((attachment, index) => (
-                          <div key={index} className="mb-2">
-                            {attachment.photo_image && (
-                              <Image
-                                src={attachment.photo_image.uri}
-                                alt="Attachment"
-                                width={64}
-                                height={64}
-                                className="w-16 h-16 object-cover rounded"
-                              />
-                            )}
-                          </div>
-                        ))}
-                    </div>
-                  )}
               </div>
-
-              {/* Tags */}
-              {job.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {job.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
-      {/* Job Details Modal */}
+      {/* Job Detail Modal */}
       {selectedJob && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              {/* Modal Header */}
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">
-                    {selectedJob.jobDetails.title || "Job Post Details"}
-                  </h2>
-                  <p className="text-gray-600">
-                    by {selectedJob.author.name} in {selectedJob.groupName}
-                  </p>
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {selectedJob.jobTitle || selectedJob.jobDetails?.title || 'Job Details'}
+                </h2>
                 <button
                   onClick={() => setSelectedJob(null)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
                 >
                   ×
                 </button>
               </div>
 
-              {/* Full Content */}
               <div className="space-y-6">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Full Post Content
-                  </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap">
-                    {selectedJob.content}
+                {/* Job Summary */}
+                {selectedJob.jobSummary && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Summary</h3>
+                    <p className="text-gray-700">{selectedJob.jobSummary}</p>
                   </div>
+                )}
+
+                {/* Original Post */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Original Post</h3>
+                  <p className="text-gray-700 whitespace-pre-wrap">
+                    {selectedJob.originalPost || selectedJob.content}
+                  </p>
                 </div>
 
-                {/* Job Details */}
-                {(selectedJob.jobDetails.company ||
-                  selectedJob.jobDetails.location ||
-                  selectedJob.jobDetails.salary) && (
+                {/* Technical Skills */}
+                {selectedJob.technicalSkills && selectedJob.technicalSkills.length > 0 && (
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      Job Information
-                    </h3>
-                    <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                      {selectedJob.jobDetails.company && (
-                        <div>
-                          <strong>Company:</strong>{" "}
-                          {selectedJob.jobDetails.company}
-                        </div>
-                      )}
-                      {selectedJob.jobDetails.location && (
-                        <div>
-                          <strong>Location:</strong>{" "}
-                          {selectedJob.jobDetails.location}
-                        </div>
-                      )}
-                      {selectedJob.jobDetails.salary && (
-                        <div>
-                          <strong>Salary:</strong>{" "}
-                          {selectedJob.jobDetails.salary}
-                        </div>
-                      )}
-                      {selectedJob.jobDetails.type && (
-                        <div>
-                          <strong>Type:</strong> {selectedJob.jobDetails.type}
-                        </div>
-                      )}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Technical Skills</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedJob.technicalSkills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
+                        >
+                          {skill}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                {/* Requirements */}
-                {selectedJob.jobDetails.requirements &&
-                  selectedJob.jobDetails.requirements.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">
-                        Requirements
-                      </h3>
-                      <ul className="bg-gray-50 p-4 rounded-lg list-disc list-inside space-y-1">
-                        {selectedJob.jobDetails.requirements.map(
-                          (req, index) => (
-                            <li key={index}>{req}</li>
-                          )
-                        )}
-                      </ul>
-                    </div>
-                  )}
-
-                {/* Attachments */}
-                {selectedJob.apifyData?.attachments &&
-                  selectedJob.apifyData.attachments.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">
-                        Attachments
-                      </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {selectedJob.apifyData.attachments.map(
-                          (attachment, index) => (
-                            <div
-                              key={index}
-                              className="bg-gray-50 p-2 rounded-lg"
-                            >
-                              {attachment.photo_image && (
-                                <Image
-                                  src={attachment.photo_image.uri}
-                                  alt={`Attachment ${index + 1}`}
-                                  width={400}
-                                  height={128}
-                                  className="w-full h-32 object-cover rounded"
-                                />
-                              )}
-                              {attachment.ocrText && (
-                                <p className="text-xs text-gray-600 mt-2">
-                                  {attachment.ocrText}
-                                </p>
-                              )}
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                {/* Meta Information */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Meta Information
-                  </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg text-sm space-y-1">
-                    <div>
-                      <strong>Posted:</strong>{" "}
-                      {formatDate(selectedJob.postedDate)}
-                    </div>
-                    <div>
-                      <strong>Scraped:</strong>{" "}
-                      {formatDate(selectedJob.scrapedAt)}
-                    </div>
-                    <div>
-                      <strong>Source:</strong> {selectedJob.source}
-                    </div>
-                    <div>
-                      <strong>Post ID:</strong> {selectedJob.postId}
-                    </div>
-                    {selectedJob.apifyData?.facebookUrl && (
-                      <div>
-                        <strong>Facebook URL:</strong>{" "}
-                        <a
-                          href={selectedJob.apifyData.facebookUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          View on Facebook
-                        </a>
-                      </div>
-                    )}
+                {/* Responsibilities */}
+                {selectedJob.responsibilities && selectedJob.responsibilities.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Responsibilities</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700">
+                      {selectedJob.responsibilities.map((resp, index) => (
+                        <li key={index}>{resp}</li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
+                )}
+
+                {/* Benefits */}
+                {selectedJob.benefits && selectedJob.benefits.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Benefits</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700">
+                      {selectedJob.benefits.map((benefit, index) => (
+                        <li key={index}>{benefit}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* How to Apply */}
+                {selectedJob.howToApply && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">How to Apply</h3>
+                    <p className="text-gray-700">{selectedJob.howToApply}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

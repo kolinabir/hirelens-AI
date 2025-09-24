@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { dbConnection, DatabaseUtils } from "@/lib/database";
+import { dbConnection } from "@/lib/database";
 import { apiLogger } from "@/lib/logger";
 import type { JobFilters, PaginatedResponse, JobPost } from "@/types";
-import { Filter } from "mongodb";
+import type { Filter, Sort, SortDirection } from "mongodb";
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
       sortOrder: (searchParams.get("sortOrder") as "asc" | "desc") || "desc",
       page: parseInt(searchParams.get("page") || "1"),
       limit: parseInt(searchParams.get("limit") || "20"),
+      structuredOnly:
+        searchParams.get("structuredOnly") === "true" ? true : false,
     };
 
     // Parse date range
@@ -34,50 +36,73 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Build MongoDB filter
-    const dbFilter: Filter<JobPost> = { isDuplicate: { $ne: true } };
+    // Build filter as a generic record to support dot-notation keys
+    const docFilter: Record<string, unknown> = { isDuplicate: { $ne: true } };
 
     if (filters.groupId) {
-      dbFilter.groupId = filters.groupId;
+      docFilter.groupId = filters.groupId;
     }
 
     if (filters.dateRange) {
-      dbFilter.scrapedAt = {
+      docFilter.scrapedAt = {
         $gte: filters.dateRange.from,
         $lte: filters.dateRange.to,
       };
     }
 
     if (filters.jobType && filters.jobType.length > 0) {
-      dbFilter["jobDetails.type"] = { $in: filters.jobType };
+      docFilter["jobDetails.type"] = { $in: filters.jobType };
     }
 
     if (filters.location) {
-      dbFilter["jobDetails.location"] = {
+      docFilter["jobDetails.location"] = {
         $regex: filters.location,
         $options: "i",
       };
     }
 
     if (filters.keywords) {
-      dbFilter.$text = { $search: filters.keywords };
+      docFilter["$text"] = { $search: filters.keywords };
     }
 
-    // Calculate pagination
+    // Structured-only filter: include docs that have a resolvable postUrl or extractedAt
+    if (filters.structuredOnly) {
+      docFilter["$or"] = [
+        { postUrl: { $exists: true } },
+        { extractedAt: { $exists: true } },
+      ];
+    }
+
+    // Pagination
     const page = Math.max(1, filters.page || 1);
     const limit = Math.min(100, Math.max(1, filters.limit || 20));
     const skip = (page - 1) * limit;
 
-    // Get total count and data
+    // Sort spec
+    const sortDirection: SortDirection = filters.sortOrder === "asc" ? 1 : -1;
+    const sortSpec: Sort = filters.structuredOnly
+      ? { extractedAt: sortDirection, scrapedAt: sortDirection }
+      : { scrapedAt: sortDirection };
+
+    const collection = dbConnection.getJobsCollection();
+
+    // Query with casts only at call sites
+    const mongoFilter = docFilter as Filter<JobPost>;
+
     const [total, jobs] = await Promise.all([
-      DatabaseUtils.countJobPosts(dbFilter),
-      DatabaseUtils.findJobPosts(dbFilter, limit, skip),
+      collection.countDocuments(mongoFilter),
+      collection
+        .find(mongoFilter)
+        .sort(sortSpec)
+        .limit(limit)
+        .skip(skip)
+        .toArray(),
     ]);
 
     const totalPages = Math.ceil(total / limit);
 
     const response: PaginatedResponse<JobPost> = {
-      data: jobs,
+      data: jobs as unknown as JobPost[],
       pagination: {
         page,
         limit,
@@ -89,7 +114,8 @@ export async function GET(request: NextRequest) {
     };
 
     apiLogger.info(
-      `📋 Retrieved ${jobs.length} jobs (page ${page}/${totalPages})`
+      `📋 Retrieved ${jobs.length} jobs (page ${page}/${totalPages})`,
+      { structuredOnly: filters.structuredOnly }
     );
     return NextResponse.json(response);
   } catch (error) {
@@ -107,18 +133,30 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get("id");
+    const postUrl = searchParams.get("postUrl");
 
-    if (!postId) {
+    if (!postId && !postUrl) {
       return NextResponse.json(
-        { error: "Post ID is required" },
+        { error: "Post ID or postUrl is required" },
         { status: 400 }
       );
     }
 
-    const deleted = await DatabaseUtils.deleteJobPost(postId);
+    const collection = dbConnection.getJobsCollection();
 
-    if (deleted) {
-      apiLogger.info(`🗑️ Deleted job post: ${postId}`);
+    const deleteFilter: Record<string, unknown> = postUrl
+      ? { postUrl }
+      : { postId };
+    const deletedResult = await collection.deleteOne(
+      deleteFilter as Filter<JobPost>
+    );
+
+    if (deletedResult.deletedCount && deletedResult.deletedCount > 0) {
+      apiLogger.info(
+        `🗑️ Deleted job post by ${postUrl ? "postUrl" : "postId"}: ${
+          postUrl || postId
+        }`
+      );
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json(
