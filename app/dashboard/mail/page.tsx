@@ -26,16 +26,20 @@ export default function ManualEmailPage() {
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<EmailResult[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [processedOnly, setProcessedOnly] = useState(true); // Default to processed jobs only
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [processedOnly]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
+      const jobsUrl = `/api/jobs?limit=50&sortBy=date&sortOrder=desc${
+        processedOnly ? "&isProcessed=true" : ""
+      }`;
       const [jobsRes, subsRes] = await Promise.all([
-        fetch("/api/jobs?limit=50&sortBy=date&sortOrder=desc"),
+        fetch(jobsUrl),
         fetch("/api/subscribers"),
       ]);
 
@@ -240,7 +244,7 @@ export default function ManualEmailPage() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
               <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold text-gray-900">
                     Select Jobs to Send ({selectedJobs.length} selected)
                   </h2>
@@ -252,6 +256,29 @@ export default function ManualEmailPage() {
                       ? "Deselect All"
                       : "Select All"}
                   </button>
+                </div>
+
+                {/* Filter Toggle */}
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={processedOnly}
+                      onChange={(e) => {
+                        setProcessedOnly(e.target.checked);
+                        setSelectedJobs([]); // Clear selection when filter changes
+                      }}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      Processed jobs only
+                    </span>
+                  </label>
+                  <div className="text-xs text-gray-500">
+                    {processedOnly
+                      ? "Showing jobs with extracted titles & companies"
+                      : "Showing all jobs (including raw content only)"}
+                  </div>
                 </div>
               </div>
               <div className="max-h-96 overflow-y-auto">

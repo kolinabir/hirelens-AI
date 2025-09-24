@@ -138,7 +138,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex gap-3">
-              <Link
+              {/* <Link
                 href="/dashboard/mail"
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
               >
@@ -156,7 +156,7 @@ export default function Dashboard() {
                   />
                 </svg>
                 Manual Email
-              </Link>
+              </Link> */}
               <button
                 onClick={fetchDashboardData}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"

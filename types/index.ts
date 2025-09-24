@@ -200,8 +200,9 @@ export interface JobFilters {
   page?: number;
   limit?: number;
 
-  // Quality filter
+  // Quality filters
   structuredOnly?: boolean; // Filter for structured jobs (with postUrl/extractedAt)
+  isProcessed?: boolean; // Filter for processed jobs (with extracted data)
 }
 
 export interface PaginatedResponse<T> {

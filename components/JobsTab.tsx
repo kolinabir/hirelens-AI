@@ -25,6 +25,7 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
     sortBy: "date",
     sortOrder: "desc",
     structuredOnly: false,
+    isProcessed: true, // Default to processed jobs only
   });
 
   useEffect(() => {
@@ -245,7 +246,16 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                 {showAdvancedFilters ? "Hide" : "Show"} Advanced
               </button>
               <button
-                onClick={() => setFilters({ page: 1, limit: 20 })}
+                onClick={() =>
+                  setFilters({
+                    page: 1,
+                    limit: 20,
+                    sortBy: "date",
+                    sortOrder: "desc",
+                    structuredOnly: false,
+                    isProcessed: true, // Reset to processed jobs only
+                  })
+                }
                 className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
               >
                 Clear All
@@ -311,23 +321,38 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
               </select>
             </div>
 
-            {/* Job Quality */}
+            {/* Job Processing Status */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                ⭐ Job Quality
+                ⭐ Job Processing
               </label>
               <select
-                value={filters.structuredOnly ? "structured" : "all"}
-                onChange={(e) =>
-                  handleFilterChange(
-                    "structuredOnly",
-                    e.target.value === "structured"
-                  )
+                value={
+                  filters.isProcessed === true
+                    ? "processed"
+                    : filters.structuredOnly
+                    ? "structured"
+                    : "all"
                 }
+                onChange={(e) => {
+                  if (e.target.value === "processed") {
+                    handleFilterChange("isProcessed", true);
+                    handleFilterChange("structuredOnly", false);
+                  } else if (e.target.value === "structured") {
+                    handleFilterChange("structuredOnly", true);
+                    handleFilterChange("isProcessed", undefined);
+                  } else {
+                    handleFilterChange("isProcessed", undefined);
+                    handleFilterChange("structuredOnly", false);
+                  }
+                }}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               >
                 <option value="all">All Jobs</option>
-                <option value="structured">✨ AI Processed Only</option>
+                <option value="processed">
+                  🎯 Processed Only (Recommended)
+                </option>
+                <option value="structured">✨ Structured Only</option>
               </select>
             </div>
           </div>

@@ -49,8 +49,14 @@ export async function GET(request: NextRequest) {
       page: parseInt(searchParams.get("page") || "1"),
       limit: parseInt(searchParams.get("limit") || "20"),
 
-      // Quality filter
+      // Quality filters
       structuredOnly: searchParams.get("structuredOnly") === "true",
+      isProcessed:
+        searchParams.get("isProcessed") === "true"
+          ? true
+          : searchParams.get("isProcessed") === "false"
+          ? false
+          : undefined,
     };
 
     // Parse legacy date range format
@@ -252,7 +258,7 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // Structured-only filter
+    // Quality filters
     if (filters.structuredOnly) {
       docFilter["$and"] = [
         ...((docFilter["$and"] as unknown[]) || []),
@@ -263,6 +269,10 @@ export async function GET(request: NextRequest) {
           ],
         },
       ];
+    }
+
+    if (filters.isProcessed !== undefined) {
+      docFilter.isProcessed = filters.isProcessed;
     }
 
     // Pagination
