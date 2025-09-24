@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import type { DashboardStats, FacebookGroup, JobPost } from "@/types";
 
 // Components
@@ -110,10 +109,10 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8 py-6">
+        <div className="max-w-7xl mx-auto px-8 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl shadow-lg overflow-hidden">
+              <div className="w-8 h-8 rounded-xl shadow-lg overflow-hidden">
                 <img
                   src="/hirelensLogo.png"
                   alt="HireLens Logo"
@@ -121,12 +120,9 @@ export default function Dashboard() {
                 />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-blue-600">
+                <h1 className="text-xl font-bold text-blue-600">
                   HireLens Dashboard
                 </h1>
-                <p className="text-gray-600 mt-1">
-                  AI-powered job discovery from Facebook groups
-                </p>
               </div>
             </div>
             <div className="flex gap-3">

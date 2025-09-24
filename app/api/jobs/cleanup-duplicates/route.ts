@@ -3,7 +3,7 @@ import dbConnection from "@/lib/database";
 import { apiLogger } from "@/lib/logger";
 
 // POST - Clean up duplicate job posts, keeping only the most recent one per postId
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     await dbConnection.connect();
     const jobsCol = dbConnection.getJobsCollection();
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
       // Sort by scrapedAt descending (most recent first)
       docs.sort(
-        (a: any, b: any) =>
+        (a: { scrapedAt: string }, b: { scrapedAt: string }) =>
           new Date(b.scrapedAt).getTime() - new Date(a.scrapedAt).getTime()
       );
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
 
       // Delete duplicate jobs
-      const deleteIds = toDelete.map((job: any) => job._id);
+      const deleteIds = toDelete.map((job: { _id: string }) => job._id);
       const deleteResult = await jobsCol.deleteMany({
         _id: { $in: deleteIds },
       });
