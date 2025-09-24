@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 Found ${allSnapshots.length} total snapshots`);
 
     // Group by websiteId
-    const snapshotsByWebsite: { [websiteId: string]: any[] } = {};
+    const snapshotsByWebsite: { [websiteId: string]: unknown[] } = {};
     for (const snapshot of allSnapshots) {
       if (!snapshotsByWebsite[snapshot.websiteId]) {
         snapshotsByWebsite[snapshot.websiteId] = [];
@@ -45,7 +45,8 @@ export async function POST(request: NextRequest) {
       // Sort by scrapedAt descending (most recent first)
       snapshots.sort(
         (a, b) =>
-          new Date(b.scrapedAt).getTime() - new Date(a.scrapedAt).getTime()
+          new Date((b as { scrapedAt: string }).scrapedAt).getTime() -
+          new Date((a as { scrapedAt: string }).scrapedAt).getTime()
       );
 
       // Keep the most recent, delete the rest
@@ -53,11 +54,13 @@ export async function POST(request: NextRequest) {
       const toDelete = snapshots.slice(1);
 
       console.log(
-        `🧹 Website ${websiteId}: Keeping 1 snapshot (${toKeep.scrapedAt}), deleting ${toDelete.length} duplicates`
+        `🧹 Website ${websiteId}: Keeping 1 snapshot (${
+          (toKeep as { scrapedAt: string }).scrapedAt
+        }), deleting ${toDelete.length} duplicates`
       );
 
       // Delete duplicate snapshots
-      const deleteIds = toDelete.map((s) => s._id);
+      const deleteIds = toDelete.map((s) => (s as { _id: string })._id);
       const deleteResult = await snapshotsCol.deleteMany({
         _id: { $in: deleteIds },
       });
@@ -69,9 +72,9 @@ export async function POST(request: NextRequest) {
         snapshotsFound: snapshots.length,
         snapshotsDeleted: deleteResult.deletedCount,
         keptSnapshot: {
-          id: toKeep._id,
-          scrapedAt: toKeep.scrapedAt,
-          jobCount: toKeep.jobCount,
+          id: (toKeep as { _id: string })._id,
+          scrapedAt: (toKeep as { scrapedAt: string }).scrapedAt,
+          jobCount: (toKeep as { jobCount: number }).jobCount,
         },
         action: "cleaned_up",
       });

@@ -135,14 +135,16 @@ function JobDetailsModal({ job, isOpen, onClose }: JobDetailsModalProps) {
                     How to Apply
                   </h4>
                   <div className="space-y-2">
-                    {job.applicationMethods.map((method: any, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <span className="capitalize font-medium">
-                          {method.type}:
-                        </span>
-                        <span className="text-blue-600">{method.value}</span>
-                      </div>
-                    ))}
+                    {(job.applicationMethods || []).map(
+                      (method: string, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2"
+                        >
+                          <span className="text-blue-600">{method}</span>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               )}
@@ -587,8 +589,8 @@ export default function JobsPage() {
                   }`}
                   onChange={(e) => {
                     const [sortBy, sortOrder] = e.target.value.split("_");
-                    handleFilterChange("sortBy", sortBy as any);
-                    handleFilterChange("sortOrder", sortOrder as any);
+                    handleFilterChange("sortBy", sortBy as string);
+                    handleFilterChange("sortOrder", sortOrder as string);
                   }}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 >
@@ -775,7 +777,11 @@ export default function JobsPage() {
                       📅 Posted Date
                     </label>
                     <select
-                      value={filters.dateRange || ""}
+                      value={
+                        typeof filters.dateRange === "string"
+                          ? filters.dateRange
+                          : ""
+                      }
                       onChange={(e) =>
                         handleFilterChange(
                           "dateRange",
@@ -898,9 +904,7 @@ export default function JobsPage() {
               <div className="flex items-center gap-2">
                 <select
                   value={filters.limit || 20}
-                  onChange={(e) =>
-                    handleFilterChange("limit", parseInt(e.target.value))
-                  }
+                  onChange={(e) => handleFilterChange("limit", e.target.value)}
                   className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value={10}>Show 10</option>

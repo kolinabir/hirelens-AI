@@ -323,9 +323,9 @@ export async function POST(request: NextRequest) {
                       { $set: jobData },
                       { upsert: true }
                     );
-                } catch (duplicateError: any) {
+                } catch (duplicateError: unknown) {
                   // Handle duplicate key errors by skipping and continuing
-                  if (duplicateError.code === 11000) {
+                  if ((duplicateError as { code?: number }).code === 11000) {
                     console.warn(
                       `⚠️ Skipping duplicate job with postUrl: ${derivedPostUrl}`
                     );
@@ -417,9 +417,9 @@ export async function POST(request: NextRequest) {
                         { $set: jobData },
                         { upsert: true }
                       );
-                  } catch (duplicateError: any) {
+                  } catch (duplicateError: unknown) {
                     // Handle duplicate key errors by skipping and continuing
-                    if (duplicateError.code === 11000) {
+                    if ((duplicateError as { code?: number }).code === 11000) {
                       console.warn(
                         `⚠️ Skipping duplicate fallback job with postUrl: ${derivedPostUrl}`
                       );

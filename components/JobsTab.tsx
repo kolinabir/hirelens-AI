@@ -290,8 +290,8 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                 }`}
                 onChange={(e) => {
                   const [sortBy, sortOrder] = e.target.value.split("_");
-                  handleFilterChange("sortBy", sortBy as any);
-                  handleFilterChange("sortOrder", sortOrder as any);
+                  handleFilterChange("sortBy", sortBy as string);
+                  handleFilterChange("sortOrder", sortOrder as string);
                 }}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               >
@@ -478,7 +478,11 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                     📅 Posted Date
                   </label>
                   <select
-                    value={filters.dateRange || ""}
+                    value={
+                      typeof filters.dateRange === "string"
+                        ? filters.dateRange
+                        : ""
+                    }
                     onChange={(e) =>
                       handleFilterChange(
                         "dateRange",
@@ -604,9 +608,7 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
             <div className="flex items-center gap-2">
               <select
                 value={filters.limit || 20}
-                onChange={(e) =>
-                  handleFilterChange("limit", parseInt(e.target.value))
-                }
+                onChange={(e) => handleFilterChange("limit", e.target.value)}
                 className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value={10}>Show 10</option>
@@ -838,27 +840,28 @@ export default function JobsTab({ initialJobs, onUpdate }: JobsTabProps) {
                       )}
 
                       {/* Technical Skills */}
-                      {job.technicalSkills?.length > 0 && (
-                        <div className="mb-3">
-                          <div className="flex flex-wrap gap-1">
-                            {job.technicalSkills
-                              .slice(0, 4)
-                              .map((skill, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium"
-                                >
-                                  {skill}
+                      {job.technicalSkills &&
+                        job.technicalSkills.length > 0 && (
+                          <div className="mb-3">
+                            <div className="flex flex-wrap gap-1">
+                              {job.technicalSkills
+                                .slice(0, 4)
+                                .map((skill, index) => (
+                                  <span
+                                    key={index}
+                                    className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium"
+                                  >
+                                    {skill}
+                                  </span>
+                                ))}
+                              {job.technicalSkills.length > 4 && (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                  +{job.technicalSkills.length - 4} more
                                 </span>
-                              ))}
-                            {job.technicalSkills.length > 4 && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                +{job.technicalSkills.length - 4} more
-                              </span>
-                            )}
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Job Description */}
                       <div className="text-gray-700 leading-relaxed mb-4">

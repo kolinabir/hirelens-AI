@@ -62,7 +62,7 @@ import { apiLogger } from "@/lib/logger";
  */
 export async function GET() {
   try {
-    apiLogger.info("Getting running processes status");
+    // apiLogger.info("Getting running processes status");
 
     // Get running processes
     const runningProcesses = await apifyService.getRunningProcesses();
@@ -73,7 +73,7 @@ export async function GET() {
     const data = {
       runningProcesses: runningProcesses.map((run) => ({
         runId: run.id,
-        status: run.status,
+        status: (run as { status?: string }).status || "RUNNING",
         startedAt: run.startedAt,
         elapsedTime: run.startedAt
           ? `${Math.floor(
@@ -94,7 +94,9 @@ export async function GET() {
                   1000
               )}s`
             : "Unknown",
-        itemsScraped: run.stats?.itemsScraped || 0,
+        itemsScraped:
+          (run as { stats?: { itemsScraped?: number } }).stats?.itemsScraped ||
+          0,
       })),
     };
 

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       // Scrape specific website
       const website = await websitesCol.findOne({
         _id: new ObjectId(websiteId),
-      });
+      } as Record<string, unknown>);
       if (!website) {
         return NextResponse.json(
           { success: false, error: "Website not found" },

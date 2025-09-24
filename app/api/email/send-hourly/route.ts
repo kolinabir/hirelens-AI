@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       const jobs = await jobsCol
         .find({
           _id: { $nin: sentJobIds.map((id: string) => new ObjectId(id)) },
-        })
+        } as Record<string, unknown>)
         .sort({ scrapedAt: -1 })
         .limit(5)
         .toArray();
@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
         title: j.jobDetails?.title || j.jobTitle,
         company: j.jobDetails?.company || j.company,
         location: j.jobDetails?.location || j.location,
-        deadline: j.jobDetails?.applicationDeadline,
+        deadline: (j.jobDetails as { applicationDeadline?: string })
+          ?.applicationDeadline,
         url: j.postUrl || j.facebookUrl || j.apifyData?.facebookUrl,
       }));
 
@@ -43,7 +44,9 @@ export async function POST(request: NextRequest) {
       const newSentIds = [
         ...sentJobIds,
         ...jobs.map((j) =>
-          typeof j._id === "string" ? j._id : j._id.toString()
+          typeof j._id === "string"
+            ? j._id
+            : (j._id as { toString(): string }).toString()
         ),
       ];
 

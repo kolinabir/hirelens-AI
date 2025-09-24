@@ -135,9 +135,14 @@ export async function POST(request: NextRequest) {
           finalPostUrl = derivedPostUrl;
         } else {
           // Create a unique identifier from available data
-          const userInfo = j.user?.id || j.user?.name || "unknown";
+          const userInfo =
+            (j.user as { id?: string; name?: string })?.id ||
+            (j.user as { id?: string; name?: string })?.name ||
+            "unknown";
           const contentHash = j.originalPost
-            ? j.originalPost.substring(0, 50).replace(/[^a-zA-Z0-9]/g, "")
+            ? (j.originalPost as string)
+                .substring(0, 50)
+                .replace(/[^a-zA-Z0-9]/g, "")
             : "no-content";
           const timestamp = Date.now();
           const randomId = Math.random().toString(36).substring(2, 15);
@@ -153,38 +158,45 @@ export async function POST(request: NextRequest) {
           processingVersion: "external_ai_v1",
           // Add required fields for dashboard compatibility
           postId:
-            j.user?.id ||
+            (j.user as { id?: string })?.id ||
             `generated-${Date.now()}-${Math.random()
               .toString(36)
               .substring(2, 15)}`,
           groupId: "facebook-external",
           groupName: "Facebook Group (External AI)",
-          content: j.originalPost || "Job post extracted via external AI",
+          content:
+            (j.originalPost as string) || "Job post extracted via external AI",
           author: {
-            name: j.user?.name || "Unknown Author",
-            profileUrl: j.facebookUrl || "#",
+            name: (j.user as { name?: string })?.name || "Unknown Author",
+            profileUrl: (j.facebookUrl as string) || "#",
             profileImage: undefined,
           },
           postedDate: new Date(),
           engagementMetrics: {
-            likes: j.likesCount || 0,
-            comments: j.commentsCount || 0,
+            likes: (j.likesCount as number) || 0,
+            comments: (j.commentsCount as number) || 0,
             shares: 0,
           },
           jobDetails: {
-            title: j.jobTitle,
-            company: j.company,
-            location: j.location,
-            salary: j.salary,
-            type: j.employmentType as any,
-            description: j.jobSummary,
-            requirements: j.technicalSkills || [],
-            contactInfo: j.howToApply,
+            title: j.jobTitle as string,
+            company: j.company as string,
+            location: j.location as string,
+            salary: j.salary as string,
+            type:
+              (j.employmentType as
+                | "freelance"
+                | "full-time"
+                | "part-time"
+                | "contract"
+                | "internship") || undefined,
+            description: j.jobSummary as string,
+            requirements: (j.technicalSkills as string[]) || [],
+            contactInfo: j.howToApply as string,
           },
           scrapedAt: new Date(),
           isProcessed: true,
           isDuplicate: false,
-          tags: j.technicalSkills || [],
+          tags: (j.technicalSkills as string[]) || [],
         };
 
         // Ensure we never save jobs with null/empty postUrl or postId
@@ -205,9 +217,9 @@ export async function POST(request: NextRequest) {
               { $set: jobData },
               { upsert: true }
             );
-        } catch (duplicateError: any) {
+        } catch (duplicateError: unknown) {
           // Handle duplicate key errors by skipping and continuing
-          if (duplicateError.code === 11000) {
+          if ((duplicateError as { code?: number }).code === 11000) {
             console.warn(
               `⚠️ Skipping duplicate job with postUrl: ${finalPostUrl}`
             );

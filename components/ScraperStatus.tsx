@@ -28,7 +28,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
   const [logs, setLogs] = useState<string[]>([]);
   const [status, setStatus] = useState<ScrapingStatus | null>(null);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [groups, setGroups] = useState<any[]>([]);
+  const [groups, setGroups] = useState<Array<Record<string, unknown>>>([]);
   const [settings, setSettings] = useState({
     maxPosts: 10,
     scrapeComments: false,
@@ -360,18 +360,25 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
                 <div className="space-y-3 max-h-40 overflow-y-auto">
                   {groups.map((group) => (
                     <label
-                      key={group._id}
+                      key={(group as { _id: string })._id}
                       className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer"
                     >
                       <input
                         type="checkbox"
-                        checked={selectedGroups.includes(group.url)}
+                        checked={selectedGroups.includes(
+                          (group as { url: string }).url
+                        )}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedGroups((prev) => [...prev, group.url]);
+                            setSelectedGroups((prev) => [
+                              ...prev,
+                              (group as { url: string }).url,
+                            ]);
                           } else {
                             setSelectedGroups((prev) =>
-                              prev.filter((url) => url !== group.url)
+                              prev.filter(
+                                (url) => url !== (group as { url: string }).url
+                              )
                             );
                           }
                         }}
@@ -379,10 +386,14 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-gray-900 truncate">
-                          {group.name}
+                          {(group as { name: string }).name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {group.totalPostsScraped} posts scraped
+                          {
+                            (group as { totalPostsScraped: number })
+                              .totalPostsScraped
+                          }{" "}
+                          posts scraped
                         </div>
                       </div>
                     </label>
@@ -514,7 +525,7 @@ export default function ScraperStatus({ onUpdate }: ScraperStatusProps) {
             )}
           </button>
 
-          {status?.runningProcesses.length > 0 && (
+          {status?.runningProcesses && status.runningProcesses.length > 0 && (
             <button
               onClick={abortScraping}
               className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 font-medium shadow-sm"

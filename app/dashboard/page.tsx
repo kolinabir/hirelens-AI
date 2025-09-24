@@ -649,10 +649,12 @@ export default function Dashboard() {
                             }`
                           );
                         }
-                      } catch (err: any) {
+                      } catch (err: unknown) {
                         console.error("❌ Subscription error:", err);
                         setSubscribeMsg(
-                          `❌ Failed to subscribe: ${err?.message || err}`
+                          `❌ Failed to subscribe: ${
+                            (err as Error)?.message || err
+                          }`
                         );
                       }
                     }
@@ -689,10 +691,12 @@ export default function Dashboard() {
                           }`
                         );
                       }
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                       console.error("❌ Subscription error:", err);
                       setSubscribeMsg(
-                        `❌ Failed to subscribe: ${err?.message || err}`
+                        `❌ Failed to subscribe: ${
+                          (err as Error)?.message || err
+                        }`
                       );
                     }
                   }}
@@ -722,10 +726,10 @@ export default function Dashboard() {
                           }`
                         );
                       }
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                       setSubscribeMsg(
                         `❌ Error triggering email sender: ${
-                          err?.message || err
+                          (err as Error)?.message || err
                         }`
                       );
                     } finally {

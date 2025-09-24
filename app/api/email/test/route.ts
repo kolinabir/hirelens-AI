@@ -36,13 +36,13 @@ export async function POST(request: NextRequest) {
       message: `Test email sent to ${email}`,
       data: { jobsSent: testJobs.length },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Test email failed:", error);
     return NextResponse.json(
       {
         success: false,
         error: "Failed to send test email",
-        details: error.message,
+        details: (error as Error).message,
       },
       { status: 500 }
     );

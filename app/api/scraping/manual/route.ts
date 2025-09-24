@@ -340,7 +340,9 @@ export async function POST(request: NextRequest) {
           const post = posts[i];
           const processingLog = `🔄 Processing post ${i + 1}/${
             posts.length
-          } by ${post.author?.name || "Unknown"}`;
+          } by ${
+            (post as { author?: { name?: string } }).author?.name || "Unknown"
+          }`;
           console.log(processingLog);
           progressLogs.push(processingLog);
 
@@ -430,10 +432,13 @@ export async function POST(request: NextRequest) {
                 finalPostUrl = derivedPostUrl;
               } else {
                 // Create a unique identifier from available data
+                const jTyped = j as Record<string, unknown>;
                 const userInfo =
-                  (j as any).user?.id || (j as any).user?.name || "unknown";
-                const contentHash = (j as any).originalPost
-                  ? (j as any).originalPost
+                  (jTyped.user as { id?: string; name?: string })?.id ||
+                  (jTyped.user as { id?: string; name?: string })?.name ||
+                  "unknown";
+                const contentHash = jTyped.originalPost
+                  ? (jTyped.originalPost as string)
                       .substring(0, 50)
                       .replace(/[^a-zA-Z0-9]/g, "")
                   : "no-content";
@@ -452,40 +457,56 @@ export async function POST(request: NextRequest) {
                 originalPostsCount: posts.length,
                 // Add required fields for dashboard compatibility
                 postId:
-                  (j as any).user?.id ||
+                  ((j as Record<string, unknown>).user as { id?: string })
+                    ?.id ||
                   `apify-${Date.now()}-${Math.random()
                     .toString(36)
                     .substring(2, 15)}`,
                 groupId: "facebook-apify",
                 groupName: "Facebook Group (Apify + External AI)",
                 content:
-                  (j as any).originalPost ||
+                  ((j as Record<string, unknown>).originalPost as string) ||
                   "Job post scraped via Apify and processed by external AI",
                 author: {
-                  name: (j as any).user?.name || "Unknown Author",
-                  profileUrl: (j as any).facebookUrl || "#",
+                  name:
+                    ((j as Record<string, unknown>).user as { name?: string })
+                      ?.name || "Unknown Author",
+                  profileUrl:
+                    ((j as Record<string, unknown>).facebookUrl as string) ||
+                    "#",
                   profileImage: undefined,
                 },
                 postedDate: new Date(),
                 engagementMetrics: {
-                  likes: (j as any).likesCount || 0,
-                  comments: (j as any).commentsCount || 0,
+                  likes:
+                    ((j as Record<string, unknown>).likesCount as number) || 0,
+                  comments:
+                    ((j as Record<string, unknown>).commentsCount as number) ||
+                    0,
                   shares: 0,
                 },
                 jobDetails: {
-                  title: (j as any).jobTitle,
-                  company: (j as any).company,
-                  location: (j as any).location,
-                  salary: (j as any).salary,
-                  type: (j as any).employmentType as any,
-                  description: (j as any).jobSummary,
-                  requirements: (j as any).technicalSkills || [],
-                  contactInfo: (j as any).howToApply,
+                  title: (j as Record<string, unknown>).jobTitle as string,
+                  company: (j as Record<string, unknown>).company as string,
+                  location: (j as Record<string, unknown>).location as string,
+                  salary: (j as Record<string, unknown>).salary as string,
+                  type:
+                    ((j as Record<string, unknown>).employmentType as string) ||
+                    undefined,
+                  description: (j as Record<string, unknown>)
+                    .jobSummary as string,
+                  requirements:
+                    ((j as Record<string, unknown>)
+                      .technicalSkills as string[]) || [],
+                  contactInfo: (j as Record<string, unknown>)
+                    .howToApply as string,
                 },
                 scrapedAt: new Date(),
                 isProcessed: true,
                 isDuplicate: false,
-                tags: (j as any).technicalSkills || [],
+                tags:
+                  ((j as Record<string, unknown>)
+                    .technicalSkills as string[]) || [],
               };
 
               // Ensure we never save jobs with null/empty postUrl or postId
@@ -512,9 +533,9 @@ export async function POST(request: NextRequest) {
                     { $set: jobData },
                     { upsert: true }
                   );
-              } catch (duplicateError: any) {
+              } catch (duplicateError: unknown) {
                 // Handle duplicate key errors by skipping and continuing
-                if (duplicateError.code === 11000) {
+                if ((duplicateError as { code?: number }).code === 11000) {
                   const dupLog = `⚠️ Skipping duplicate job with postUrl: ${finalPostUrl}`;
                   console.warn(dupLog);
                   progressLogs.push(dupLog);

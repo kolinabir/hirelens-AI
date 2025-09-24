@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
 
     if (filters.location) {
       docFilter["$or"] = [
-        ...((docFilter["$or"] as any[]) || []),
+        ...((docFilter["$or"] as unknown[]) || []),
         { location: { $regex: filters.location, $options: "i" } },
         { "jobDetails.location": { $regex: filters.location, $options: "i" } },
       ];
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     if (filters.company) {
       docFilter["$or"] = [
-        ...((docFilter["$or"] as any[]) || []),
+        ...((docFilter["$or"] as unknown[]) || []),
         { company: { $regex: filters.company, $options: "i" } },
         { "jobDetails.company": { $regex: filters.company, $options: "i" } },
       ];
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     // Employment & Experience filters
     if (filters.jobType && filters.jobType.length > 0) {
       docFilter["$or"] = [
-        ...((docFilter["$or"] as any[]) || []),
+        ...((docFilter["$or"] as unknown[]) || []),
         { employmentType: { $in: filters.jobType } },
         { "jobDetails.type": { $in: filters.jobType } },
       ];
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
           .split("-")
           .map((s) => parseInt(s));
         docFilter["$or"] = [
-          ...((docFilter["$or"] as any[]) || []),
+          ...((docFilter["$or"] as unknown[]) || []),
           { salary: { $regex: `\\b(${min}|${max})\\b`, $options: "i" } },
           {
             "jobDetails.salary": {
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
       } else if (filters.salaryRange.includes("+")) {
         const min = parseInt(filters.salaryRange.replace("+", ""));
         docFilter["$or"] = [
-          ...((docFilter["$or"] as any[]) || []),
+          ...((docFilter["$or"] as unknown[]) || []),
           { salary: { $regex: `\\b${min}\\b`, $options: "i" } },
           { "jobDetails.salary": { $regex: `\\b${min}\\b`, $options: "i" } },
         ];
@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
           : filters.workType;
 
       docFilter["$or"] = [
-        ...((docFilter["$or"] as any[]) || []),
+        ...((docFilter["$or"] as unknown[]) || []),
         { content: { $regex: workTypeRegex, $options: "i" } },
         { originalPost: { $regex: workTypeRegex, $options: "i" } },
         { remoteOption: filters.workType === "remote" },
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
         .split(",")
         .map((skill) => skill.trim());
       docFilter["$or"] = [
-        ...((docFilter["$or"] as any[]) || []),
+        ...((docFilter["$or"] as unknown[]) || []),
         {
           technicalSkills: {
             $in: skillsArray.map((skill) => new RegExp(skill, "i")),
@@ -237,7 +237,7 @@ export async function GET(request: NextRequest) {
 
     if (filters.hasContact) {
       docFilter["$or"] = [
-        ...((docFilter["$or"] as any[]) || []),
+        ...((docFilter["$or"] as unknown[]) || []),
         { howToApply: { $exists: true, $ne: "" } },
         { applicationMethods: { $exists: true, $ne: [] } },
         { "jobDetails.contactInfo": { $exists: true, $ne: "" } },
@@ -246,7 +246,7 @@ export async function GET(request: NextRequest) {
 
     if (filters.highEngagement) {
       docFilter["$or"] = [
-        ...((docFilter["$or"] as any[]) || []),
+        ...((docFilter["$or"] as unknown[]) || []),
         { likesCount: { $gte: 10 } },
         { "engagementMetrics.likes": { $gte: 10 } },
       ];
@@ -255,7 +255,7 @@ export async function GET(request: NextRequest) {
     // Structured-only filter
     if (filters.structuredOnly) {
       docFilter["$and"] = [
-        ...((docFilter["$and"] as any[]) || []),
+        ...((docFilter["$and"] as unknown[]) || []),
         {
           $or: [
             { postUrl: { $exists: true, $ne: "" } },

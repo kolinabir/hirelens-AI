@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const websitesCol = dbConnection.getTrackedWebsitesCollection();
 
     // Build query
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (websiteId) {
       query.websiteId = websiteId;
     }
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       snapshots.map(async (snapshot) => {
         const website = await websitesCol.findOne({
           _id: new ObjectId(snapshot.websiteId),
-        });
+        } as Record<string, unknown>);
 
         return {
           ...snapshot,
@@ -87,7 +87,7 @@ export async function DELETE(request: NextRequest) {
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
     // Build query
-    const query: any = {
+    const query: Record<string, unknown> = {
       scrapedAt: { $lt: cutoffDate },
     };
 
