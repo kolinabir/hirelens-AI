@@ -383,14 +383,12 @@ export async function POST(request: NextRequest) {
           await dbConnection.connect();
           const db = dbConnection.getDb();
 
-          // Ensure unique index on postUrl for idempotent upserts
+          // Ensure index on postUrl for better query performance (non-unique to avoid conflicts)
           try {
-            await db
-              .collection("jobs")
-              .createIndex({ postUrl: 1 }, { unique: true });
+            await db.collection("jobs").createIndex({ postUrl: 1 });
           } catch (idxErr) {
             apiLogger.warn(
-              "Unique index on jobs.postUrl could not be created (may already exist or duplicates present)",
+              "Index on jobs.postUrl could not be created (may already exist)",
               { error: idxErr }
             );
           }
@@ -426,7 +424,8 @@ export async function POST(request: NextRequest) {
                       .replace(/[^a-zA-Z0-9]/g, "")
                   : "no-content";
                 const timestamp = Date.now();
-                finalPostUrl = `generated://${userInfo}/${contentHash}/${timestamp}`;
+                const randomId = Math.random().toString(36).substring(2, 15);
+                finalPostUrl = `generated://${userInfo}/${contentHash}/${timestamp}/${randomId}`;
                 console.log(`Generated postUrl for Apify job: ${finalPostUrl}`);
               }
 
@@ -438,7 +437,11 @@ export async function POST(request: NextRequest) {
                 processingVersion: "external_ai_v1",
                 originalPostsCount: posts.length,
                 // Add required fields for dashboard compatibility
-                postId: (j as any).user?.id || `apify-${Date.now()}`,
+                postId:
+                  (j as any).user?.id ||
+                  `apify-${Date.now()}-${Math.random()
+                    .toString(36)
+                    .substring(2, 15)}`,
                 groupId: "facebook-apify",
                 groupName: "Facebook Group (Apify + External AI)",
                 content:
@@ -470,6 +473,18 @@ export async function POST(request: NextRequest) {
                 isDuplicate: false,
                 tags: (j as any).technicalSkills || [],
               };
+
+              // Ensure we never save jobs with null/empty postUrl or postId
+              if (!finalPostUrl || !jobData.postId) {
+                console.error(
+                  "❌ Skipping job with invalid postUrl or postId:",
+                  {
+                    postUrl: finalPostUrl,
+                    postId: jobData.postId,
+                  }
+                );
+                continue;
+              }
 
               const result = await db
                 .collection("jobs")

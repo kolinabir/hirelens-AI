@@ -104,8 +104,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (!cronKey || cronKey !== expectedKey) {
-      apiLogger.warn("Unauthorized cron trigger attempt", { 
-        providedKey: cronKey ? "***" : "none"
+      apiLogger.warn("Unauthorized cron trigger attempt", {
+        providedKey: cronKey ? "***" : "none",
       });
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -175,7 +175,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!["SUCCEEDED", "FAILED", "ABORTED"].includes(lastStatus)) {
-      apiLogger.info("Max runtime reached, aborting run via abort API", { runId });
+      apiLogger.info("Max runtime reached, aborting run via abort API", {
+        runId,
+      });
       try {
         const res = await fetch("http://localhost:3000/api/scraping/abort", {
           method: "POST",
@@ -253,7 +255,9 @@ export async function POST(request: NextRequest) {
     // Step 2: Process posts through external AI job filtering
     if (Array.isArray(posts) && posts.length > 0) {
       try {
-        apiLogger.info("Processing scraped posts through external AI job filtering...");
+        apiLogger.info(
+          "Processing scraped posts through external AI job filtering..."
+        );
 
         // Convert posts to string format for external API
         const postsJson = JSON.stringify(posts);
@@ -274,9 +278,12 @@ export async function POST(request: NextRequest) {
 
             // Ensure unique index on postUrl for idempotent upserts
             try {
-              await db.collection("jobs").createIndex({ postUrl: 1 }, { unique: true });
+              await db.collection("jobs").createIndex({ postUrl: 1 });
             } catch (idxErr) {
-              apiLogger.warn("Unique index on jobs.postUrl could not be created (may already exist or duplicates present)", { error: idxErr });
+              apiLogger.warn(
+                "Unique index on jobs.postUrl could not be created (may already exist or duplicates present)",
+                { error: idxErr }
+              );
             }
 
             const savedJobs = [];
@@ -298,7 +305,10 @@ export async function POST(request: NextRequest) {
 
                 if (!derivedPostUrl) {
                   // Skip if we cannot determine a unique post URL
-                  apiLogger.warn("Skipping structured job without resolvable postUrl", { jobSample: j });
+                  apiLogger.warn(
+                    "Skipping structured job without resolvable postUrl",
+                    { jobSample: j }
+                  );
                   continue;
                 }
 
@@ -312,20 +322,29 @@ export async function POST(request: NextRequest) {
                   scrapingType: "automatic",
                 };
 
-                const result = await db.collection("jobs").updateOne(
-                  { postUrl: derivedPostUrl },
-                  { $set: jobData },
-                  { upsert: true }
-                );
+                const result = await db
+                  .collection("jobs")
+                  .updateOne(
+                    { postUrl: derivedPostUrl },
+                    { $set: jobData },
+                    { upsert: true }
+                  );
 
                 // Track saved/updated jobs for response metrics
                 savedJobs.push({
                   ...jobData,
                   _id: result.upsertedId ?? undefined,
-                  _op: result.upsertedId ? "upserted" : result.modifiedCount > 0 ? "updated" : "unchanged",
+                  _op: result.upsertedId
+                    ? "upserted"
+                    : result.modifiedCount > 0
+                    ? "updated"
+                    : "unchanged",
                 });
               } catch (dbError) {
-                apiLogger.error("Error saving structured job to database:", dbError);
+                apiLogger.error(
+                  "Error saving structured job to database:",
+                  dbError
+                );
               }
             }
 
@@ -348,23 +367,31 @@ export async function POST(request: NextRequest) {
             };
           }
         } else {
-          apiLogger.warn("External AI job filtering failed:", externalFilterResult.error);
-          
+          apiLogger.warn(
+            "External AI job filtering failed:",
+            externalFilterResult.error
+          );
+
           // Fallback: Use local job extractor
           try {
-            apiLogger.info("Attempting fallback job extraction using local extractor...");
-            
-            const localExtractedJobs = JobPostExtractor.extractJobPosts(postsJson);
-            
+            apiLogger.info(
+              "Attempting fallback job extraction using local extractor..."
+            );
+
+            const localExtractedJobs =
+              JobPostExtractor.extractJobPosts(postsJson);
+
             if (localExtractedJobs.length > 0) {
               await dbConnection.connect();
               const db = dbConnection.getDb();
-              
+
               const fallbackSavedJobs = [];
               for (const job of localExtractedJobs) {
                 try {
-                  const derivedPostUrl = job.facebookUrl || `fallback_${Date.now()}_${Math.random()}`;
-                  
+                  const derivedPostUrl =
+                    job.facebookUrl ||
+                    `fallback_${Date.now()}_${Math.random()}`;
+
                   const jobData = {
                     ...job,
                     postUrl: derivedPostUrl,
@@ -375,22 +402,31 @@ export async function POST(request: NextRequest) {
                     scrapingType: "automatic_fallback",
                   };
 
-                  const result = await db.collection("jobs").updateOne(
-                    { postUrl: derivedPostUrl },
-                    { $set: jobData },
-                    { upsert: true }
-                  );
+                  const result = await db
+                    .collection("jobs")
+                    .updateOne(
+                      { postUrl: derivedPostUrl },
+                      { $set: jobData },
+                      { upsert: true }
+                    );
 
                   fallbackSavedJobs.push({
                     ...jobData,
                     _id: result.upsertedId ?? undefined,
-                    _op: result.upsertedId ? "upserted" : result.modifiedCount > 0 ? "updated" : "unchanged",
+                    _op: result.upsertedId
+                      ? "upserted"
+                      : result.modifiedCount > 0
+                      ? "updated"
+                      : "unchanged",
                   });
                 } catch (dbError) {
-                  apiLogger.error("Error saving fallback job to database:", dbError);
+                  apiLogger.error(
+                    "Error saving fallback job to database:",
+                    dbError
+                  );
                 }
               }
-              
+
               responseData.jobExtraction = {
                 success: true,
                 structuredJobsFound: localExtractedJobs.length,
@@ -398,7 +434,7 @@ export async function POST(request: NextRequest) {
                 processingMethod: "local_fallback",
                 fallback: `External AI failed, used local extractor - processed ${fallbackSavedJobs.length} jobs`,
               };
-              
+
               apiLogger.info(
                 `Fallback successful: processed ${fallbackSavedJobs.length} jobs using local extractor`
               );
@@ -406,16 +442,23 @@ export async function POST(request: NextRequest) {
               responseData.jobExtraction = {
                 success: false,
                 error: externalFilterResult.error,
-                fallback: "External AI unavailable and local extractor found no jobs",
+                fallback:
+                  "External AI unavailable and local extractor found no jobs",
               };
             }
           } catch (fallbackError) {
-            apiLogger.error("Fallback job extraction also failed:", fallbackError);
+            apiLogger.error(
+              "Fallback job extraction also failed:",
+              fallbackError
+            );
             responseData.jobExtraction = {
               success: false,
               error: externalFilterResult.error,
               fallback: "Both external AI and local extractor failed",
-              details: fallbackError instanceof Error ? fallbackError.message : "Unknown fallback error",
+              details:
+                fallbackError instanceof Error
+                  ? fallbackError.message
+                  : "Unknown fallback error",
             };
           }
         }

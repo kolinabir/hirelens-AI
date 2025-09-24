@@ -140,7 +140,8 @@ export async function POST(request: NextRequest) {
             ? j.originalPost.substring(0, 50).replace(/[^a-zA-Z0-9]/g, "")
             : "no-content";
           const timestamp = Date.now();
-          finalPostUrl = `generated://${userInfo}/${contentHash}/${timestamp}`;
+          const randomId = Math.random().toString(36).substring(2, 15);
+          finalPostUrl = `generated://${userInfo}/${contentHash}/${timestamp}/${randomId}`;
           console.log(`Generated postUrl for job: ${finalPostUrl}`);
         }
 
@@ -151,7 +152,11 @@ export async function POST(request: NextRequest) {
           extractedAt: new Date(),
           processingVersion: "external_ai_v1",
           // Add required fields for dashboard compatibility
-          postId: j.user?.id || `generated-${Date.now()}`,
+          postId:
+            j.user?.id ||
+            `generated-${Date.now()}-${Math.random()
+              .toString(36)
+              .substring(2, 15)}`,
           groupId: "facebook-external",
           groupName: "Facebook Group (External AI)",
           content: j.originalPost || "Job post extracted via external AI",
@@ -181,6 +186,15 @@ export async function POST(request: NextRequest) {
           isDuplicate: false,
           tags: j.technicalSkills || [],
         };
+
+        // Ensure we never save jobs with null/empty postUrl or postId
+        if (!finalPostUrl || !jobData.postId) {
+          console.error("❌ Skipping job with invalid postUrl or postId:", {
+            postUrl: finalPostUrl,
+            postId: jobData.postId,
+          });
+          continue;
+        }
 
         const result = await dbConnection
           .getJobsCollection()
