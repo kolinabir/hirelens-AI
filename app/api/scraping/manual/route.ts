@@ -338,21 +338,56 @@ export async function POST(request: NextRequest) {
             await dbConnection.connect();
             const db = dbConnection.getDb();
 
+            // Ensure unique index on postUrl for idempotent upserts
+            try {
+              await db.collection("jobs").createIndex({ postUrl: 1 }, { unique: true });
+            } catch (idxErr) {
+              apiLogger.warn("Unique index on jobs.postUrl could not be created (may already exist or duplicates present)", { error: idxErr });
+            }
+
             const savedJobs = [];
             for (const job of structuredJobs) {
               try {
+                type StructuredJob = {
+                  postUrl?: string;
+                  attachments?: Array<{ url?: string }>;
+                  facebookUrl?: string;
+                  [key: string]: unknown;
+                };
+                const j = job as StructuredJob;
+                // Derive a stable post URL for uniqueness: prefer job.postUrl, else first attachment url, else facebookUrl
+                const derivedPostUrl: string | undefined =
+                  (typeof j.postUrl === "string" && j.postUrl.trim()) ||
+                  (Array.isArray(j.attachments) && j.attachments[0]?.url) ||
+                  (typeof j.facebookUrl === "string" && j.facebookUrl.trim()) ||
+                  undefined;
+
+                if (!derivedPostUrl) {
+                  // Skip if we cannot determine a unique post URL
+                  apiLogger.warn("Skipping structured job without resolvable postUrl", { jobSample: j });
+                  continue;
+                }
+
                 const jobData = {
                   ...job,
+                  postUrl: derivedPostUrl,
                   source: "facebook_scraping_external_ai",
                   extractedAt: new Date(),
                   processingVersion: "external_ai_v1",
                   originalPostsCount: posts.length,
                 };
 
-                const result = await db.collection("jobs").insertOne(jobData);
+                const result = await db.collection("jobs").updateOne(
+                  { postUrl: derivedPostUrl },
+                  { $set: jobData },
+                  { upsert: true }
+                );
+
+                // Track saved/updated jobs for response metrics
                 savedJobs.push({
                   ...jobData,
-                  _id: result.insertedId,
+                  _id: result.upsertedId ?? undefined,
+                  _op: result.upsertedId ? "upserted" : result.modifiedCount > 0 ? "updated" : "unchanged",
                 });
               } catch (dbError) {
                 console.error(
