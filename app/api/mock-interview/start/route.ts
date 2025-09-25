@@ -87,7 +87,7 @@ async function createUltravoxCall(systemPrompt: string) {
   const body = {
     systemPrompt,
     model: "fixie-ai/ultravox",
-    voice: "Mark",
+    voice: "Conversationalist-English",
     temperature: 0.4,
     maxDuration: "300s",
     timeExceededMessage:
