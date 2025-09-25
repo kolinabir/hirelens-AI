@@ -57,6 +57,9 @@ interface EnvConfig {
 
   // Apify API
   apifyApiToken?: string;
+
+  // Ultravox API
+  ultravoxApiKey?: string;
 }
 
 function validateEnvVar(
@@ -174,6 +177,9 @@ export const env: EnvConfig = {
 
   // Apify API
   apifyApiToken: process.env.APIFY_API_TOKEN,
+
+  // Ultravox API
+  ultravoxApiKey: process.env.ULTRAVOX_API_KEY,
 };
 
 // Validate required environment variables on startup
