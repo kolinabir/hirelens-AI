@@ -1,5 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   UltravoxSession,
   UltravoxSessionStatus,
@@ -19,35 +20,37 @@ const StatusLabel: Record<UltravoxSessionStatus, string> = {
   [UltravoxSessionStatus.SPEAKING]: "Speaking",
 };
 
-interface InterviewPhase {
-  name: string;
-  duration: string;
-  description: string;
-  color: string;
-}
+// Interview phases (currently not used in UI but kept for reference)
+// interface InterviewPhase {
+//   name: string;
+//   duration: string;
+//   description: string;
+//   color: string;
+// }
 
-const INTERVIEW_PHASES: InterviewPhase[] = [
-  {
-    name: "Introduction",
-    duration: "0:00-1:00",
-    description: "Warm greeting and brief background discussion",
-    color: "bg-blue-600",
-  },
-  {
-    name: "Problem Solving",
-    duration: "1:00-3:00",
-    description: "Technical questions and thought process evaluation",
-    color: "bg-gray-700",
-  },
-  {
-    name: "Scenario Based",
-    duration: "3:00-5:00",
-    description: "Workplace scenarios and judgment assessment",
-    color: "bg-green-600",
-  },
-];
+// const INTERVIEW_PHASES: InterviewPhase[] = [
+//   {
+//     name: "Introduction",
+//     duration: "0:00-1:00",
+//     description: "Warm greeting and brief background discussion",
+//     color: "bg-blue-600",
+//   },
+//   {
+//     name: "Problem Solving",
+//     duration: "1:00-3:00",
+//     description: "Technical questions and thought process evaluation",
+//     color: "bg-gray-700",
+//   },
+//   {
+//     name: "Scenario Based",
+//     duration: "3:00-5:00",
+//     description: "Workplace scenarios and judgment assessment",
+//     color: "bg-green-600",
+//   },
+// ];
 
 export default function MockInterviewPage() {
+  const router = useRouter();
   const [cvText, setCvText] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [jobDesc, setJobDesc] = useState("");
@@ -68,6 +71,9 @@ export default function MockInterviewPage() {
     null
   );
   const [currentTime, setCurrentTime] = useState<number>(0);
+  const [conversationHistory, setConversationHistory] = useState<string>("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   // Interview data (currently not used in UI)
   // const [interviewData, setInterviewData] = useState<{
   //   joinUrl: string;
@@ -107,18 +113,49 @@ export default function MockInterviewPage() {
   }, [interviewStartTime, isInterviewActive]);
 
   // End call function
-  const endCall = useCallback(() => {
+  const endCall = useCallback(async () => {
+    // First, trigger analysis if we have conversation history
+    if (conversationHistory.trim()) {
+      setIsAnalyzing(true);
+      try {
+        const response = await fetch("/api/mock-interview/analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            interview_conversation: conversationHistory,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Navigate to results page with analysis data
+          const analysisParam = encodeURIComponent(JSON.stringify(data.data));
+          router.push(`/mock-interview/results?analysis=${analysisParam}`);
+          return; // Don't reset the form, user is navigating away
+        } else {
+          console.error("Analysis failed:", data.error);
+        }
+      } catch (error) {
+        console.error("Analysis error:", error);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    }
+
+    // Then clean up the session
     if (sessionRef.current) {
       sessionRef.current.leaveCall().catch(() => {});
       sessionRef.current = null;
     }
     setJoinUrl(null);
-    setShowSetupForm(true);
     setInterviewStartTime(null);
     setCurrentTime(0);
     setTranscripts([]);
     setStatus(UltravoxSessionStatus.DISCONNECTED);
-  }, []);
+  }, [conversationHistory, router]);
 
   const startSession = useCallback(
     (url: string) => {
@@ -144,7 +181,18 @@ export default function MockInterviewPage() {
 
       // Transcripts events update live transcript list
       session.addEventListener("transcripts", () => {
-        setTranscripts([...session.transcripts]);
+        const newTranscripts = [...session.transcripts];
+        setTranscripts(newTranscripts);
+
+        // Build conversation history for analysis
+        const conversation = newTranscripts
+          .map((t) => {
+            const speaker =
+              t.speaker === "user" ? "Interviewee" : "Interviewer";
+            return `${speaker}: ${t.text}`;
+          })
+          .join("\n\n");
+        setConversationHistory(conversation);
       });
 
       // Handle session end
@@ -645,22 +693,36 @@ export default function MockInterviewPage() {
                       </div>
                       <button
                         onClick={endCall}
-                        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                        disabled={isAnalyzing}
+                        className={`${
+                          isAnalyzing
+                            ? "bg-gray-500 cursor-not-allowed"
+                            : "bg-red-600 hover:bg-red-700"
+                        } text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl text-sm sm:text-base`}
                       >
-                        <svg
-                          className="w-4 h-4 sm:w-5 sm:h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 3l1.5 1.5M4.5 4.5l15 15"
-                          />
-                        </svg>
-                        <span>End Call</span>
+                        {isAnalyzing ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-white border-t-transparent"></div>
+                            <span>Analyzing Interview...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-4 h-4 sm:w-5 sm:h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 3l1.5 1.5M4.5 4.5l15 15"
+                              />
+                            </svg>
+                            <span>End Call</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
