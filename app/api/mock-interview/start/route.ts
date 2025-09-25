@@ -109,16 +109,13 @@ async function createUltravoxCall(systemPrompt: string) {
 
     if (!resp.ok) {
       let errorMessage = `HTTP ${resp.status}`;
-      let errorDetails = "";
       try {
         const errorData = await resp.json();
         errorMessage = errorData.message || errorData.error || errorMessage;
-        errorDetails = JSON.stringify(errorData);
         console.error("Ultravox API error details:", errorData);
       } catch {
         const textError = await resp.text();
         errorMessage = textError || errorMessage;
-        errorDetails = textError;
         console.error("Ultravox API error text:", textError);
       }
 
@@ -213,7 +210,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract join URL from Ultravox response
-    const responseData = (result as any).data;
+    const responseData = (
+      result as {
+        data: {
+          joinUrl?: string;
+          webJoinUrl?: string;
+          call?: { joinUrl?: string };
+          callId?: string;
+          id?: string;
+        };
+      }
+    ).data;
     const joinUrl =
       responseData.joinUrl ||
       responseData.webJoinUrl ||

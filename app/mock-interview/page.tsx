@@ -1,18 +1,13 @@
 "use client";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   UltravoxSession,
   UltravoxSessionStatus,
   Transcript,
 } from "ultravox-client";
 
-type InterviewState = "setup" | "connecting" | "active" | "completed" | "error";
+// Interview state type (currently not used)
+// type InterviewState = "setup" | "connecting" | "active" | "completed" | "error";
 
 const StatusLabel: Record<UltravoxSessionStatus, string> = {
   [UltravoxSessionStatus.DISCONNECTED]: "Disconnected",
@@ -59,7 +54,6 @@ export default function MockInterviewPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [joinUrl, setJoinUrl] = useState<string | null>(null);
-  const [interviewState, setInterviewState] = useState<InterviewState>("setup");
   const [showSetupForm, setShowSetupForm] = useState(true);
 
   // Real-time session
@@ -74,8 +68,13 @@ export default function MockInterviewPage() {
     null
   );
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [currentPhase, setCurrentPhase] = useState<number>(0);
-  const [interviewData, setInterviewData] = useState<any>(null);
+  // Interview data (currently not used in UI)
+  // const [interviewData, setInterviewData] = useState<{
+  //   joinUrl: string;
+  //   callId: string;
+  //   duration: string;
+  //   phases: Array<{ name: string; duration: string }>;
+  // } | null>(null);
 
   const isAgentSpeaking = status === UltravoxSessionStatus.SPEAKING;
   const isUserTalking = status === UltravoxSessionStatus.LISTENING;
@@ -83,14 +82,15 @@ export default function MockInterviewPage() {
     status !== UltravoxSessionStatus.DISCONNECTED &&
     interviewStartTime !== null;
 
-  // Calculate current phase based on elapsed time
-  const elapsedSeconds = currentTime;
-  const currentPhaseIndex = useMemo(() => {
-    if (elapsedSeconds < 60) return 0; // Introduction
-    if (elapsedSeconds < 180) return 1; // Problem Solving
-    if (elapsedSeconds < 300) return 2; // Scenario Based
-    return 3; // Completed
-  }, [elapsedSeconds]);
+  // Calculate current phase based on elapsed time (currently not used)
+  // const elapsedSeconds = currentTime;
+  // Current phase calculation (currently not used in UI)
+  // const currentPhaseIndex = useMemo(() => {
+  //   if (elapsedSeconds < 60) return 0; // Introduction
+  //   if (elapsedSeconds < 180) return 1; // Problem Solving
+  //   if (elapsedSeconds < 300) return 2; // Scenario Based
+  //   return 3; // Completed
+  // }, [elapsedSeconds]);
 
   // Timer effect
   useEffect(() => {
@@ -99,13 +99,12 @@ export default function MockInterviewPage() {
       interval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - interviewStartTime) / 1000);
         setCurrentTime(elapsed);
-        setCurrentPhase(currentPhaseIndex);
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [interviewStartTime, isInterviewActive, currentPhaseIndex]);
+  }, [interviewStartTime, isInterviewActive]);
 
   // End call function
   const endCall = useCallback(() => {
@@ -115,10 +114,8 @@ export default function MockInterviewPage() {
     }
     setJoinUrl(null);
     setShowSetupForm(true);
-    setInterviewState("setup");
     setInterviewStartTime(null);
     setCurrentTime(0);
-    setCurrentPhase(0);
     setTranscripts([]);
     setStatus(UltravoxSessionStatus.DISCONNECTED);
   }, []);
@@ -154,8 +151,6 @@ export default function MockInterviewPage() {
       session.addEventListener("disconnected", () => {
         setInterviewStartTime(null);
         setCurrentTime(0);
-        setCurrentPhase(0);
-        setInterviewState("completed");
       });
 
       // Join the call
@@ -216,15 +211,12 @@ export default function MockInterviewPage() {
       }
 
       // Store interview data for display
-      setInterviewData(data.data);
       setJoinUrl(url);
       setShowSetupForm(false); // Hide the setup form
-      setInterviewState("active");
 
       // Reset timing state
       setInterviewStartTime(null);
       setCurrentTime(0);
-      setCurrentPhase(0);
 
       // Immediately join and show live transcripts + animations
       startSession(url);
@@ -295,84 +287,7 @@ export default function MockInterviewPage() {
     );
   };
 
-  const PhaseIndicator = ({
-    phase,
-    index,
-    isActive,
-    isCompleted,
-  }: {
-    phase: InterviewPhase;
-    index: number;
-    isActive: boolean;
-    isCompleted: boolean;
-  }) => (
-    <div
-      className={`group relative p-5 rounded-2xl border-2 transition-all duration-300 ${
-        isActive
-          ? "border-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 shadow-lg"
-          : isCompleted
-          ? "border-green-500 bg-gradient-to-r from-green-50 to-green-100"
-          : "border-gray-200 bg-gray-50 hover:border-gray-300"
-      }`}
-    >
-      <div className="flex items-start space-x-4">
-        <div
-          className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md ${
-            isCompleted
-              ? "bg-green-600"
-              : isActive
-              ? "bg-blue-600"
-              : "bg-gray-400 group-hover:bg-gray-500"
-          }`}
-        >
-          {isCompleted ? (
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          ) : (
-            index + 1
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-lg font-bold text-gray-900">{phase.name}</h4>
-            <span className="text-sm font-medium text-gray-500 bg-white px-3 py-1 rounded-full border">
-              {phase.duration}
-            </span>
-          </div>
-          <p className="text-gray-600 leading-relaxed">{phase.description}</p>
-        </div>
-      </div>
-      {isActive && (
-        <div className="absolute top-4 right-4 flex items-center space-x-2">
-          <div className="flex space-x-1">
-            <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-            <div
-              className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
-              style={{ animationDelay: "0.2s" }}
-            ></div>
-            <div
-              className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"
-              style={{ animationDelay: "0.4s" }}
-            ></div>
-          </div>
-          <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
-            In Progress
-          </span>
-        </div>
-      )}
-    </div>
-  );
+  // PhaseIndicator component removed as it's not being used
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -951,7 +866,8 @@ export default function MockInterviewPage() {
                                     d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                                   />
                                 </svg>
-                                {status === UltravoxSessionStatus.CONNECTED && (
+                                {status !==
+                                  UltravoxSessionStatus.DISCONNECTED && (
                                   <div className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
                                     <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full"></div>
                                   </div>
@@ -981,7 +897,8 @@ export default function MockInterviewPage() {
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                   />
                                 </svg>
-                                {status === UltravoxSessionStatus.CONNECTED && (
+                                {status !==
+                                  UltravoxSessionStatus.DISCONNECTED && (
                                   <div className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
                                     <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full"></div>
                                   </div>
@@ -996,16 +913,16 @@ export default function MockInterviewPage() {
                             </div>
                           </div>
                           <h4 className="text-xl font-bold text-gray-900 mb-3">
-                            {status === UltravoxSessionStatus.CONNECTED
+                            {status !== UltravoxSessionStatus.DISCONNECTED
                               ? "Interview Starting..."
                               : "Connecting to Interview Session"}
                           </h4>
                           <p className="text-gray-600 max-w-md mx-auto mb-6">
-                            {status === UltravoxSessionStatus.CONNECTED
+                            {status !== UltravoxSessionStatus.DISCONNECTED
                               ? "The AI interviewer will begin shortly. Your conversation will appear here in real-time."
                               : "Please wait while we establish the connection to your interview session."}
                           </p>
-                          <TalkingDots />
+                          <TalkingDots color="bg-blue-500" />
                         </div>
                       ) : (
                         transcripts.map((t, idx) => (
@@ -1081,7 +998,7 @@ export default function MockInterviewPage() {
                                       : "You"}
                                   </span>
                                   <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                                    {new Date(t.end).toLocaleTimeString()}
+                                    {new Date().toLocaleTimeString()}
                                   </span>
                                 </div>
                                 <p
@@ -1124,10 +1041,10 @@ export default function MockInterviewPage() {
                   Ready to Practice?
                 </h2>
                 <p className="text-lg text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
-                  Enter your resume text and specify the role you're targeting.
-                  Our advanced AI interviewer will conduct a structured 5-minute
-                  mock interview with real-time feedback and professional
-                  analysis.
+                  Enter your resume text and specify the role you&apos;re
+                  targeting. Our advanced AI interviewer will conduct a
+                  structured 5-minute mock interview with real-time feedback and
+                  professional analysis.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
